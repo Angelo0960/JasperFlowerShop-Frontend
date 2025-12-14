@@ -1,4 +1,4 @@
-import SalesTable from "./SalesTab.jsx";
+import SalesTable from "./SalesTable.jsx";
 
 const MonthlySales = () => {
   return (
