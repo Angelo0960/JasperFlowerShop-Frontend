@@ -1,4 +1,4 @@
-import SalesTable from "./SalesTable.jsx";
+import SalesTable from "./SalesTab.jsx";
 
 const WeeklySales = () => {
   return (
