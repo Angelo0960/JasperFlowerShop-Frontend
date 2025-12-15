@@ -1,7 +1,7 @@
 const ExportButton = () => {
   return (
     <div className="flex items-center space-x-4">
-      {/* Format Selector */}
+      {}
       <div className="relative">
         <select
           className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -13,7 +13,7 @@ const ExportButton = () => {
         <div className="text-xs text-gray-500 mt-1 text-center">Format</div>
       </div>
 
-      {/* Current Period Display */}
+      {}
       <div className="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 min-w-[120px]">
         <div className="flex items-center justify-center">
           <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@ const ExportButton = () => {
         <div className="text-xs text-gray-500 mt-1 text-center">Period</div>
       </div>
 
-      {/* Export Button */}
+      {}
       <button
         className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 min-w-[200px] justify-center"
       >
