@@ -1,6 +1,6 @@
 import { useState } from "react";
 import OrderTransaction from "./OrderTransaction";
-import OrderFulfillment from "./OrderFullfilment";
+import OrderFulfillment from "./OrderFulfillment";
 
 export default function OrdersTab() {
   const [tab, setTab] = useState("transaction");
