@@ -1,5 +1,5 @@
 import SalesUi from './components/SalesUi.jsx'
-import OrdersUi from './components/OrdersUi.jsx'
+import OrdersUi from './components/OrdersUI.jsx'
 import Tabs from './components/Tab.jsx'
 import ProductManagement from './components/ProductManagement.jsx' // Add this import
 import './App.css'
