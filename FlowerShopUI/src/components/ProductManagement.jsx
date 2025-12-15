@@ -1,0 +1,437 @@
+import React, { useState } from "react";
+
+const ProductManagement = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: "Bouquets",
+    unit_price: "",
+    product_code: ""
+  });
+
+  // Categories for dropdown
+  const categories = ["Bouquets", "Plants", "Arrangements", "Accessories"];
+
+  // Mock data for UI demonstration
+  const mockProducts = [
+    {
+      id: 1,
+      name: "Rose Bouquet",
+      description: "Beautiful arrangement of fresh roses",
+      category: "Bouquets",
+      unit_price: "25.99",
+      product_code: "BQT-001",
+      updated_at: "2024-01-15",
+      created_at: "2024-01-01"
+    },
+    {
+      id: 2,
+      name: "Orchid Plant",
+      description: "Elegant orchid in ceramic pot",
+      category: "Plants",
+      unit_price: "35.50",
+      product_code: "PLT-001",
+      updated_at: "2024-01-10",
+      created_at: "2024-01-05"
+    },
+    {
+      id: 3,
+      name: "Wedding Centerpiece",
+      description: "Lavish floral arrangement for weddings",
+      category: "Arrangements",
+      unit_price: "120.00",
+      product_code: "ARR-001",
+      updated_at: "2024-01-12",
+      created_at: "2024-01-08"
+    }
+  ];
+
+  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
+  const products = mockProducts;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      category: "Bouquets",
+      unit_price: "",
+      product_code: ""
+    });
+    setIsEditing(false);
+  };
+
+  const openAddModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (product) => {
+    setFormData({
+      name: product.name,
+      description: product.description || "",
+      category: product.category || "Bouquets",
+      unit_price: product.unit_price,
+      product_code: product.product_code || ""
+    });
+    setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    resetForm();
+  };
+
+  const handleSubmit = () => {
+    alert(isEditing ? "Update functionality would trigger here" : "Create functionality would trigger here");
+    closeModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    if (confirm("Delete functionality would trigger here")) {
+      alert(`Product ${productId} would be deleted`);
+    }
+  };
+
+  const getCategoryColor = (category) => {
+    switch(category) {
+      case 'Bouquets': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Plants': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Arrangements': return 'bg-pink-100 text-pink-800 border-pink-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {/* Header Section */}
+      <div className="mb-8 p-6 bg-pink-50 rounded-xl border border-pink-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-pink-800/80 mb-2">Product Management</h1>
+            <p className="text-pink-800/60">Manage your product catalog. Create, edit, and delete products.</p>
+          </div>
+          
+          <button
+            onClick={openAddModal}
+            className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-medium rounded-lg transition-colors flex items-center border border-pink-700"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add New Product
+          </button>
+        </div>
+
+        {/* Search and Stats Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative w-full md:w-96">
+            <input
+              type="text"
+              placeholder="Search products by name, category, or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 pl-10 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+            />
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-pink-800/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-pink-800/80">{products.length}</div>
+              <div className="text-sm text-pink-800/60">Total Products</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-pink-800/80">{filteredProducts.length}</div>
+              <div className="text-sm text-pink-800/60">Showing</div>
+            </div>
+            <button
+              onClick={() => alert("Refresh functionality would trigger here")}
+              className="px-4 py-2 bg-[#f8f3ed] hover:bg-pink-50 text-pink-800/70 font-medium rounded-lg transition-colors border border-[#d4789e26] flex items-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Search Status */}
+        {searchTerm && (
+          <div className="mt-4 p-3 bg-pink-100 border border-pink-200 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-pink-800/70">
+                Searching: <span className="font-semibold">"{searchTerm}"</span> • Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="text-sm text-pink-600 hover:text-pink-800 hover:underline"
+              >
+                Clear Search
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProducts.length === 0 ? (
+          <div className="col-span-full text-center p-12 bg-pink-50 rounded-xl border border-pink-200">
+            <svg className="w-20 h-20 mx-auto text-pink-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 className="text-xl font-semibold text-pink-800/70 mb-2">
+              {searchTerm ? "No Products Found" : "No Products Available"}
+            </h3>
+            <p className="text-pink-800/60 mb-6">
+              {searchTerm 
+                ? `No products match your search for "${searchTerm}"`
+                : "Start by adding your first product"
+              }
+            </p>
+            {!searchTerm && (
+              <button
+                onClick={openAddModal}
+                className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-medium rounded-lg transition-colors border border-pink-700"
+              >
+                <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add First Product
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredProducts.map((product) => (
+            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-[#d4789e26] hover:shadow-md transition-shadow">
+              <div className="p-6">
+                {/* Product Header */}
+                <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
+                  <div>
+                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
+                      {product.category || 'Uncategorized'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-pink-800/60 font-mono bg-pink-50 px-2 py-1 rounded border border-pink-200">
+                    {product.product_code || `ID: ${product.id}`}
+                  </div>
+                </div>
+                
+                {/* Product Name and Description */}
+                <h3 className="text-xl font-semibold text-pink-800/80 mb-3">
+                  {product.name}
+                </h3>
+                
+                <p className="text-pink-800/70 text-sm mb-6 min-h-[60px]">
+                  {product.description || 'No description available'}
+                </p>
+                
+                {/* Price and Actions */}
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="text-2xl font-bold text-pink-800/80">
+                      ₱{parseFloat(product.unit_price || 0).toFixed(2)}
+                    </div>
+                    <div className="text-sm text-pink-800/60 mt-1">
+                      Last updated: {new Date(product.updated_at || product.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditModal(product)}
+                      className="px-4 py-2 bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium rounded-lg transition-colors border border-pink-200 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product.id)}
+                      className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors border border-red-200 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add/Edit Product Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#d4789e26]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-pink-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-pink-800/80">
+                  {isEditing ? 'Edit Product' : 'Add New Product'}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-pink-800/60 hover:text-pink-800"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-pink-800/60 mt-1">
+                {isEditing ? 'Update product details below' : 'Fill in the product details below'}
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="space-y-6">
+                {/* Product Name */}
+                <div>
+                  <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                    Product Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter product name"
+                    className="w-full px-4 py-3 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Enter product description"
+                    rows="3"
+                    className="w-full px-4 py-3 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                      Category *
+                    </label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+                    >
+                      {categories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Product Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                      Product Code
+                    </label>
+                    <input
+                      type="text"
+                      name="product_code"
+                      value={formData.product_code}
+                      onChange={handleInputChange}
+                      placeholder="e.g., PROD-001"
+                      className="w-full px-4 py-3 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+                    />
+                  </div>
+                </div>
+
+                {/* Unit Price */}
+                <div>
+                  <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                    Unit Price (₱) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-800/60">₱</span>
+                    <input
+                      type="number"
+                      name="unit_price"
+                      value={formData.unit_price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      className="w-full pl-10 pr-4 py-3 border border-[#d4789e26] rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white text-pink-800/70"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-pink-200">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-3 bg-[#f8f3ed] hover:bg-pink-50 text-pink-800/70 font-medium rounded-lg transition-colors border border-[#d4789e26]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-medium rounded-lg transition-colors border border-pink-700 flex items-center"
+                >
+                  {isEditing ? (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Update Product
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create Product
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProductManagement;
