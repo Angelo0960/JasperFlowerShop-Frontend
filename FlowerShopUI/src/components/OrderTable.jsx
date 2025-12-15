@@ -4,33 +4,33 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
   const [updatingId, setUpdatingId] = useState(null);
 
   const updateStatus = async (id, currentStatus, newStatus) => {
-    if (updatingId) return; // Prevent multiple simultaneous updates
+    if (updatingId) return; 
     
     try {
       setUpdatingId(id);
       
       console.log(`🔄 Updating order ${id} from ${currentStatus} to ${newStatus}`);
       
-      // FIXED: Changed from /api/orders/${id}/status to /orders/update-status/${id}
+ 
       const response = await fetch(`http://localhost:3000/orders/update-status/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({ status: newStatus }), // Removed staff_id since your backend doesn't expect it
+        body: JSON.stringify({ status: newStatus }), 
       });
 
       console.log("📡 Update response status:", response.status);
 
-      // First check if response is OK
+      
       if (!response.ok) {
         const text = await response.text();
         console.error("❌ Server error response:", text);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Then try to parse as JSON
+      
       const result = await response.json();
       console.log("✅ Update result:", result);
 
@@ -39,7 +39,7 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
       }
 
       console.log("🔄 Refreshing orders list...");
-      refreshOrders(); // Refresh UI
+      refreshOrders(); 
     } catch (error) {
       console.error("❌ Error updating status:", error);
       alert(`Failed to update order: ${error.message}`);
@@ -174,7 +174,7 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  {/* View Details Button */}
+                  {}
                   <button
                     onClick={() => alert(`Order Details:\nOrder ID: ${order.id}\nCode: ${order.order_code}\nCustomer: ${order.customer_name}\nAmount: ${formatCurrency(order.total_amount)}\nItems: ${order.items_count}\nStatus: ${order.status}`)}
                     className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
@@ -182,7 +182,7 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                     View
                   </button>
                   
-                  {/* Status Update Buttons */}
+                  {}
                   {order.status === "pending" && (
                     <button
                       onClick={() => updateStatus(order.id, order.status, "in-progress")}
@@ -203,7 +203,7 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                     </button>
                   )}
                   
-                  {/* Cancel Button (for pending and in-progress) */}
+                  {}
                   {(order.status === "pending" || order.status === "in-progress") && (
                     <button
                       onClick={() => {
@@ -218,12 +218,12 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                     </button>
                   )}
                   
-                  {/* View Sales Record for completed orders */}
+                  {}
                     {order.status === "completed" && (
                       <button
                         onClick={async () => {
                           try {
-                            // Fetch sales data for this order
+                            
                             const response = await fetch(`http://localhost:3000/orders/${order.id}/sales`);
                             const result = await response.json();
                             
