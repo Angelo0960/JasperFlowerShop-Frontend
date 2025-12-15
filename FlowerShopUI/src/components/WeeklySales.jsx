@@ -25,10 +25,10 @@ const WeeklySales = () => {
       console.log("📊 Fetching weekly sales...");
       
       // Try both endpoints
-      const endpoints = [
-        "http://localhost:3000/sales/reports/weekly",  // Working endpoint
-        "http://localhost:3000/api/sales/reports/weekly"
-      ];
+const endpoints = [
+  "http://localhost:3000/api/reports/sales?period=weekly",  // Correct endpoint
+  "http://localhost:3000/sales/reports/weekly"  // Fallback for backward compatibility
+];
       
       let response;
       let result;
@@ -125,8 +125,8 @@ const WeeklySales = () => {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-        <p className="mt-2 text-gray-600">Loading weekly sales data...</p>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+        <p className="mt-2 text-pink-800/60">Loading weekly sales data...</p>
       </div>
     );
   }
@@ -142,7 +142,7 @@ const WeeklySales = () => {
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={retryFetch}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors border border-red-700"
           >
             Retry
           </button>
@@ -165,19 +165,19 @@ const WeeklySales = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {/* TOTAL REVENUE */}
-        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h6 className="text-slate-800 text-xl font-semibold">Total Revenue</h6>
-            <div className="p-2 bg-green-50 rounded-full">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Total Revenue</h6>
+            <div className="p-2 bg-pink-50 rounded-full border border-pink-200">
+              <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 mb-2">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">
             ₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <div className="flex items-center text-sm text-slate-600">
+          <div className="flex items-center text-sm text-pink-800/60">
             <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
@@ -186,51 +186,51 @@ const WeeklySales = () => {
         </div>
 
         {/* TOTAL ORDERS */}
-        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h6 className="text-slate-800 text-xl font-semibold">Total Orders</h6>
-            <div className="p-2 bg-blue-50 rounded-full">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Total Orders</h6>
+            <div className="p-2 bg-blue-50 rounded-full border border-blue-200">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 mb-2">{totalOrders}</p>
-          <div className="flex items-center text-sm text-slate-600">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">{totalOrders}</p>
+          <div className="flex items-center text-sm text-pink-800/60">
             <span>Last 7 Days</span>
           </div>
         </div>
 
         {/* ITEMS SOLD */}
-        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h6 className="text-slate-800 text-xl font-semibold">Items Sold</h6>
-            <div className="p-2 bg-purple-50 rounded-full">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Items Sold</h6>
+            <div className="p-2 bg-purple-50 rounded-full border border-purple-200">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 mb-2">{itemsSold}</p>
-          <div className="flex items-center text-sm text-slate-600">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">{itemsSold}</p>
+          <div className="flex items-center text-sm text-pink-800/60">
             <span>Last 7 Days</span>
           </div>
         </div>
 
         {/* AVERAGE ORDER VALUE - FIXED with safeAverage */}
-        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h6 className="text-slate-800 text-xl font-semibold">Average Order Value</h6>
-            <div className="p-2 bg-orange-50 rounded-full">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Average Order Value</h6>
+            <div className="p-2 bg-orange-50 rounded-full border border-orange-200">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 mb-2">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">
             ₱{safeAverage.toFixed(2)}
           </p>
-          <div className="flex items-center text-sm text-slate-600">
+          <div className="flex items-center text-sm text-pink-800/60">
             <span>Per Order</span>
           </div>
         </div>
@@ -238,10 +238,10 @@ const WeeklySales = () => {
 
       {/* Sales Chart */}
       {chartData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Weekly Sales Trend</h3>
-            <span className="text-sm text-gray-500">
+            <h3 className="text-lg font-semibold text-pink-800/80">Weekly Sales Trend</h3>
+            <span className="text-sm text-pink-800/60">
               {chartData.length} days of data
             </span>
           </div>
@@ -262,7 +262,7 @@ const WeeklySales = () => {
                 />
                 <Bar 
                   dataKey="totalSales" 
-                  fill="#10B981" 
+                  fill="#db2777"  // Changed to pink color
                   name="Daily Revenue" 
                   radius={[4, 4, 0, 0]}
                 />
@@ -273,12 +273,12 @@ const WeeklySales = () => {
       )}
 
       {/* SALES TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 border-b">
+      <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">
+        <div className="p-4 border-b border-pink-200">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Weekly Sales Details</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-pink-800/80">Weekly Sales Details</h3>
+              <p className="text-sm text-pink-800/60">
                 {salesData.length > 0 
                   ? `${salesData.length} sales recorded this week` 
                   : 'No sales recorded yet this week'}
@@ -286,7 +286,7 @@ const WeeklySales = () => {
             </div>
             <button 
               onClick={retryFetch}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition-colors text-sm font-medium border border-pink-700"
             >
               ↻ Refresh
             </button>
