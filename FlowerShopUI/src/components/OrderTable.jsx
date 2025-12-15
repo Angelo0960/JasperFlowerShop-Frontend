@@ -1,8 +1,84 @@
-// File: OrderTable.jsx
 import { useState } from "react";
 
 export default function OrderTable({ data, refreshOrders, isLoading }) {
   const [updatingId, setUpdatingId] = useState(null);
+
+  const updateStatus = async (id, currentStatus, newStatus) => {
+    if (updatingId) return; // Prevent multiple simultaneous updates
+    
+    try {
+      setUpdatingId(id);
+      
+      console.log(`🔄 Updating order ${id} from ${currentStatus} to ${newStatus}`);
+      
+      // FIXED: Changed from /api/orders/${id}/status to /orders/update-status/${id}
+      const response = await fetch(`http://localhost:3000/orders/update-status/${id}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ status: newStatus }), // Removed staff_id since your backend doesn't expect it
+      });
+
+      console.log("📡 Update response status:", response.status);
+
+      // First check if response is OK
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("❌ Server error response:", text);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Then try to parse as JSON
+      const result = await response.json();
+      console.log("✅ Update result:", result);
+
+      if (!result.success) {
+        throw new Error(result.message || "Update failed");
+      }
+
+      console.log("🔄 Refreshing orders list...");
+      refreshOrders(); // Refresh UI
+    } catch (error) {
+      console.error("❌ Error updating status:", error);
+      alert(`Failed to update order: ${error.message}`);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP'
+    }).format(amount);
+  };
+
+  const formatStatus = (status) => {
+    return status.replace('-', ' ').toLowerCase();
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'pending': return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' };
+      case 'in-progress': return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' };
+      case 'completed': return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' };
+      case 'cancelled': return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' };
+      default: return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' };
+    }
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -35,6 +111,7 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
         
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((order) => {
+            const statusColors = getStatusColor(order.status);
             const isUpdating = updatingId === order.id;
             
             return (
@@ -51,11 +128,11 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        Order Code
+                        {order.order_code}
                       </div>
                       {order.staff_name && (
                         <div className="text-xs text-gray-500">
-                          by Staff Name
+                          by {order.staff_name}
                         </div>
                       )}
                     </div>
@@ -63,79 +140,109 @@ export default function OrderTable({ data, refreshOrders, isLoading }) {
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">Customer Name</div>
+                  <div className="text-sm font-medium text-gray-900">{order.customer_name}</div>
                   {order.customer_phone && (
-                    <div className="text-xs text-gray-500">Customer Phone</div>
+                    <div className="text-xs text-gray-500">{order.customer_phone}</div>
                   )}
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mr-2">
-                      0
+                      {order.items_count}
                     </span>
                     <div className="text-sm text-gray-600">
-                      View Items
+                      {Array.isArray(order.items) 
+                        ? order.items.map(item => item.name).join(', ')
+                        : 'View Items'}
                     </div>
                   </div>
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                  ₱0.00
+                  {formatCurrency(order.total_amount)}
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border-gray-300 border`}>
-                    Status
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text} ${statusColors.border} border`}>
+                    {formatStatus(order.status)}
                   </span>
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  Date
+                  {formatDate(order.created_at || order.formatted_date)}
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   {/* View Details Button */}
                   <button
-                    onClick={() => {}}
+                    onClick={() => alert(`Order Details:\nOrder ID: ${order.id}\nCode: ${order.order_code}\nCustomer: ${order.customer_name}\nAmount: ${formatCurrency(order.total_amount)}\nItems: ${order.items_count}\nStatus: ${order.status}`)}
                     className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
                   >
                     View
                   </button>
                   
                   {/* Status Update Buttons */}
-                  <button
-                    onClick={() => {}}
-                    disabled={isUpdating || isLoading}
-                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
-                  >
-                    Start
-                  </button>
+                  {order.status === "pending" && (
+                    <button
+                      onClick={() => updateStatus(order.id, order.status, "in-progress")}
+                      disabled={isUpdating || isLoading}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+                    >
+                      {isUpdating ? 'Processing...' : 'Start'}
+                    </button>
+                  )}
                   
-                  <button
-                    onClick={() => {}}
-                    disabled={isUpdating || isLoading}
-                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
-                  >
-                    Complete
-                  </button>
+                  {order.status === "in-progress" && (
+                    <button
+                      onClick={() => updateStatus(order.id, order.status, "completed")}
+                      disabled={isUpdating || isLoading}
+                      className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+                    >
+                      {isUpdating ? 'Completing...' : 'Complete'}
+                    </button>
+                  )}
                   
-                  {/* Cancel Button */}
-                  <button
-                    onClick={() => {}}
-                    disabled={isUpdating || isLoading}
-                    className="px-3 py-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  {/* Cancel Button (for pending and in-progress) */}
+                  {(order.status === "pending" || order.status === "in-progress") && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to cancel this order?')) {
+                          updateStatus(order.id, order.status, "cancelled");
+                        }
+                      }}
+                      disabled={isUpdating || isLoading}
+                      className="px-3 py-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
                   
-                  {/* View Sales Record */}
-                  <button
-                    onClick={() => {}}
-                    className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-sm font-medium transition-colors"
-                  >
-                    View Sale
-                  </button>
+                  {/* View Sales Record for completed orders */}
+                    {order.status === "completed" && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            // Fetch sales data for this order
+                            const response = await fetch(`http://localhost:3000/orders/${order.id}/sales`);
+                            const result = await response.json();
+                            
+                            if (result.success && result.data.sales.length > 0) {
+                              const sale = result.data.sales[0];
+                              alert(`Sales Record Created!\n\nSale Code: ${sale.sale_code}\nDate: ${sale.sale_date}\nTime: ${sale.sale_time}\nCustomer: ${sale.customer_name}\nAmount: ${formatCurrency(sale.total_amount)}\nItems: ${sale.items_count}`);
+                            } else {
+                              alert('No sales record found for this order');
+                            }
+                          } catch (error) {
+                            console.error("Error fetching sales:", error);
+                            alert('Could not fetch sales information');
+                          }
+                        }}
+                        className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-sm font-medium transition-colors"
+                      >
+                        View Sale
+                      </button>
+                    )}
                 </td>
               </tr>
             );
