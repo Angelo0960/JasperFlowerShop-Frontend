@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import SalesTable from "./SalesTable.jsx";
-import ExportButton from "./ExportButton.jsx";  // Add this import
+import ExportButton from "./ExportButton.jsx";  
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const DailySales = () => {
@@ -18,12 +18,11 @@ const DailySales = () => {
   useEffect(() => {
     fetchDailySales();
     
-    // Set up interval to check for new day
+    
     const intervalId = setInterval(() => {
       const now = new Date();
       const storedDate = new Date(currentDate);
       
-      // Check if it's a new day (different date)
       if (
         now.getDate() !== storedDate.getDate() ||
         now.getMonth() !== storedDate.getMonth() ||
@@ -33,7 +32,7 @@ const DailySales = () => {
         setCurrentDate(now);
         resetDailyData();
       }
-    }, 60000); // Check every minute
+    }, 60000);
     
     return () => clearInterval(intervalId);
   }, [currentDate]);
@@ -45,7 +44,7 @@ const DailySales = () => {
       
       console.log("📊 Fetching daily sales...");
       
-      const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0]; 
       const response = await fetch(`http://localhost:3000/sales/reports/daily?date=${today}`);
       
       if (!response.ok) {
@@ -56,7 +55,7 @@ const DailySales = () => {
       console.log("📦 Daily API Response:", result);
       
       if (result.success) {
-        // Extract data from the response structure
+      
         let rawData = [];
         let summary = {};
         let hourlyBreakdown = [];
@@ -71,20 +70,18 @@ const DailySales = () => {
         
         console.log(`✅ Daily sales loaded: ${rawData.length} records`);
         
-        // Ensure arrays
+       
         if (!Array.isArray(rawData)) rawData = [];
         if (!Array.isArray(hourlyBreakdown)) hourlyBreakdown = [];
         if (!Array.isArray(topProductsData)) topProductsData = [];
         
         setSalesData(rawData);
         
-        // Format hourly data for chart
         const formattedChartData = formatHourlyData(hourlyBreakdown);
         setChartData(formattedChartData);
         
         setTopProducts(topProductsData);
         
-        // Calculate stats - ensure they're numbers
         const totalRev = parseFloat(summary.total_sales || summary.totalSales || 0);
         const totalOrd = parseInt(summary.transaction_count || rawData.length || 0);
         const totalItems = parseInt(summary.total_items || 0);
@@ -103,7 +100,6 @@ const DailySales = () => {
     } catch (error) {
       console.error('❌ Error fetching daily sales:', error);
       setError(error.message);
-      // Set default values on error
       setTotalRevenue(0);
       setTotalOrders(0);
       setItemsSold(0);
@@ -115,7 +111,6 @@ const DailySales = () => {
 
   const formatHourlyData = (hourlyData) => {
     if (!Array.isArray(hourlyData) || hourlyData.length === 0) {
-      // Create default hourly data for the chart
       const hours = Array.from({ length: 24 }, (_, i) => i);
       return hours.map(hour => ({
         hour: `${hour}:00`,
@@ -134,7 +129,6 @@ const DailySales = () => {
   const resetDailyData = () => {
     console.log("🔄 Resetting daily data...");
     
-    // Reset all state to initial values
     setSalesData([]);
     setChartData([]);
     setTopProducts([]);
@@ -143,7 +137,6 @@ const DailySales = () => {
     setItemsSold(0);
     setAverageOrderValue(0);
     
-    // Fetch fresh data for the new day
     fetchDailySales();
   };
 
@@ -191,12 +184,11 @@ const DailySales = () => {
     );
   }
 
-  // Ensure averageOrderValue is a number before using toFixed
   const safeAverage = typeof averageOrderValue === 'number' ? averageOrderValue : 0;
 
   return (
     <>
-      {/* Export Button at the top */}
+      {}
       <div className="flex justify-end mb-6">
         <ExportButton activePeriod="daily" salesData={salesData} />
       </div>
@@ -229,7 +221,7 @@ const DailySales = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* TODAY'S REVENUE */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-slate-800 text-xl font-semibold">Today's Revenue</h6>
@@ -250,7 +242,7 @@ const DailySales = () => {
           </div>
         </div>
 
-        {/* TODAY'S ORDERS */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-slate-800 text-xl font-semibold">Today's Orders</h6>
@@ -266,7 +258,7 @@ const DailySales = () => {
           </div>
         </div>
 
-        {/* ITEMS SOLD TODAY */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-slate-800 text-xl font-semibold">Items Sold</h6>
@@ -282,7 +274,7 @@ const DailySales = () => {
           </div>
         </div>
 
-        {/* AVG ORDER VALUE TODAY */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-slate-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-slate-800 text-xl font-semibold">Average Order</h6>
@@ -301,7 +293,7 @@ const DailySales = () => {
         </div>
       </div>
 
-      {/* Daily Sales Trend Chart */}
+      {}
       {chartData.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Hourly Sales Trend</h3>
@@ -343,7 +335,7 @@ const DailySales = () => {
         </div>
       )}
 
-      {/* Today's Top Products */}
+      {}
       {topProducts.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Today's Top Products</h3>
@@ -370,7 +362,7 @@ const DailySales = () => {
         </div>
       )}
 
-      {/* TODAY'S SALES TABLE */}
+      {}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-800">Today's Sales Details</h3>
