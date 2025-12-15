@@ -24,7 +24,6 @@ const OrderCards = () => {
       Total Orders
     </h6>
     <p className="text-slate-600 leading-normal font-light">
-
     </p>
     <h6>
         Today
@@ -45,7 +44,6 @@ const OrderCards = () => {
         Today
     </h6>
   </div>
-  
 </div>
 </div>
     );

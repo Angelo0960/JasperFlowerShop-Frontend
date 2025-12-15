@@ -10,7 +10,7 @@ const STATUS_TABS = [
 
 export default function OrderFulfillmentTab() {
   const [activeStatus, setActiveStatus] = useState("pending");
-  const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]); // Store ALL orders
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
@@ -20,6 +20,34 @@ export default function OrderFulfillmentTab() {
     completed: 0,
     cancelled: 0
   });
+
+  // Check if a date is today
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    
+    const orderDate = new Date(dateString);
+    const today = new Date();
+    
+    return (
+      orderDate.getDate() === today.getDate() &&
+      orderDate.getMonth() === today.getMonth() &&
+      orderDate.getFullYear() === today.getFullYear()
+    );
+  };
+
+  // Get today's completed orders
+  const getTodayCompletedOrders = useCallback((orders) => {
+    if (!Array.isArray(orders)) return [];
+    
+    return orders.filter(order => {
+      // Check if order is completed AND was completed today
+      if (order.status !== "completed") return false;
+      
+      // Check completed_at date if available, otherwise use created_at or updated_at
+      const dateToCheck = order.completed_at || order.updated_at || order.created_at;
+      return isToday(dateToCheck);
+    });
+  }, []);
 
   // Fetch order statistics
   const fetchOrderStats = useCallback(async () => {
@@ -42,14 +70,17 @@ export default function OrderFulfillmentTab() {
     }
   }, []);
 
-  // Memoized fetch function to prevent recreation
+  // Load orders for the current tab
   const loadOrders = useCallback(async () => {
     try {
       console.log("🔄 Loading orders with status:", activeStatus);
       setLoading(true);
       setError(null);
       
-      const url = `http://localhost:3000/orders/list?status=${activeStatus}`;
+      let url = "http://localhost:3000/orders/list";
+      
+      // For all tabs, we'll fetch all orders but the table will filter them appropriately
+      // This ensures we have data for all tabs
       console.log("🌐 Fetching from:", url);
       
       const response = await fetch(url);
@@ -64,7 +95,8 @@ export default function OrderFulfillmentTab() {
       console.log("📦 Orders received:", result.data?.length || 0, "orders");
       
       if (result.success) {
-        setOrders(result.data || []);
+        // Store ALL orders
+        setAllOrders(result.data || []);
         console.log("✅ Orders loaded successfully");
       } else {
         console.error("❌ Failed to load orders:", result.message);
@@ -78,37 +110,75 @@ export default function OrderFulfillmentTab() {
     }
   }, [activeStatus]);
 
+  // Function to immediately update stats when order status changes
+  const updateStatsImmediately = useCallback((oldStatus, newStatus) => {
+    console.log(`📊 Updating stats: ${oldStatus} -> ${newStatus}`);
+    
+    setStats(prevStats => {
+      const newStats = { ...prevStats };
+      
+      // Decrease count from old status
+      if (oldStatus === "pending") newStats.pending = Math.max(0, newStats.pending - 1);
+      if (oldStatus === "in-progress") newStats.inProgress = Math.max(0, newStats.inProgress - 1);
+      if (oldStatus === "completed") newStats.completed = Math.max(0, newStats.completed - 1);
+      if (oldStatus === "cancelled") newStats.cancelled = Math.max(0, newStats.cancelled - 1);
+      
+      // Increase count to new status
+      if (newStatus === "pending") newStats.pending += 1;
+      if (newStatus === "in-progress") newStats.inProgress += 1;
+      if (newStatus === "completed") newStats.completed += 1;
+      if (newStatus === "cancelled") newStats.cancelled += 1;
+      
+      // Total remains the same (just moving between statuses)
+      console.log("📊 Updated stats immediately:", newStats);
+      return newStats;
+    });
+  }, []);
+
   // Function to handle order status update from OrderTable
-  const handleOrderStatusUpdate = useCallback((orderId, newStatus) => {
-    console.log(`🔄 Order ${orderId} status changed to: ${newStatus}`);
+  const handleOrderStatusUpdate = useCallback((orderId, oldStatus, newStatus) => {
+    console.log(`🔄 Order ${orderId} status changed: ${oldStatus} -> ${newStatus}`);
     
-    // Update the order in the local state
-    setOrders(prevOrders => 
-      prevOrders.map(order => 
+    // 1. Immediately update the stats counts
+    updateStatsImmediately(oldStatus, newStatus);
+    
+    // 2. Update the local orders state
+    setAllOrders(prevOrders => {
+      return prevOrders.map(order => 
         order.id === orderId 
-          ? { ...order, status: newStatus }
+          ? { 
+              ...order, 
+              status: newStatus,
+              // If order was just completed, add completed_at timestamp
+              ...(newStatus === "completed" && !order.completed_at ? {
+                completed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString() // Also update updated_at
+              } : newStatus !== "completed" ? {} : order)
+            }
           : order
-      )
-    );
+      );
+    });
     
-    // Update stats based on the status change
-    // For simplicity, we'll refetch stats to ensure accuracy
-    fetchOrderStats();
+    // 3. Refresh server stats to ensure accuracy (delayed to avoid race condition)
+    setTimeout(() => {
+      fetchOrderStats();
+    }, 500);
     
-    // If the order is no longer in the current tab, remove it from view
-    if (activeStatus !== newStatus) {
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-    }
-  }, [activeStatus, fetchOrderStats]);
+  }, [updateStatsImmediately, fetchOrderStats]);
 
-  // Load orders on component mount and when status changes
+  // Load orders on component mount and when status tab changes
   useEffect(() => {
-    console.log("🎯 OrderFulfillmentTab mounted or activeStatus changed");
+    console.log("🎯 Loading orders for status:", activeStatus);
     loadOrders();
-    fetchOrderStats();
-  }, [loadOrders, fetchOrderStats]);
+  }, [loadOrders]);
 
-  // Get count for a specific tab
+  // Load stats on component mount
+  useEffect(() => {
+    console.log("📊 Loading order stats");
+    fetchOrderStats();
+  }, [fetchOrderStats]);
+
+  // Get count for a specific tab from server stats
   const getTabCount = useCallback((tabId) => {
     switch(tabId) {
       case "pending":
@@ -116,6 +186,7 @@ export default function OrderFulfillmentTab() {
       case "in-progress":
         return stats.inProgress;
       case "completed":
+        // Show total completed orders from server stats in the tab count
         return stats.completed;
       case "cancelled":
         return stats.cancelled;
@@ -124,93 +195,112 @@ export default function OrderFulfillmentTab() {
     }
   }, [stats]);
 
-  // Get the actual count of orders in the current tab
-  const getCurrentTabCount = useMemo(() => {
-    return orders.filter(order => order.status === activeStatus).length;
-  }, [orders, activeStatus]);
+  // Get count of today's completed orders for the stats card
+  const getTodayCompletedCount = useMemo(() => {
+    return getTodayCompletedOrders(allOrders).length;
+  }, [allOrders, getTodayCompletedOrders]);
 
   // Memoized filtered orders for better performance
   const filteredOrders = useMemo(() => {
     console.log("🔍 Filtering orders by status:", activeStatus);
-    const filtered = orders.filter(order => order.status === activeStatus);
-    console.log(`🔍 Found ${filtered.length} orders with status "${activeStatus}"`);
-    console.log(`📊 Stats show ${getTabCount(activeStatus)} for this status`);
-    return filtered;
-  }, [orders, activeStatus, getTabCount]);
+    
+    if (activeStatus === "completed") {
+      // For completed status, filter to show only today's completed orders
+      return getTodayCompletedOrders(allOrders);
+    } else {
+      // For other statuses, filter by status
+      return allOrders.filter(order => order.status === activeStatus);
+    }
+  }, [allOrders, activeStatus, getTodayCompletedOrders]);
 
-  // Log when filteredOrders changes
-  useEffect(() => {
-    console.log("📝 filteredOrders updated:", filteredOrders.length);
-  }, [filteredOrders]);
+  // Manual refresh function
+  const handleManualRefresh = useCallback(() => {
+    console.log("🔄 Manual refresh triggered");
+    loadOrders();
+    fetchOrderStats();
+  }, [loadOrders, fetchOrderStats]);
+
+  // Format date for display
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
   return (
     <div className="p-4">
       {/* Order Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Total Orders</div>
-          <div className="text-2xl font-bold">{stats.total}</div>
+        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
+          <div className="text-sm text-pink-800/70">Total Orders</div>
+          <div className="text-2xl font-bold text-pink-800/80">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Pending</div>
+        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
+          <div className="text-sm text-pink-800/70">Pending</div>
           <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">In Progress</div>
+        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
+          <div className="text-sm text-pink-800/70">In Progress</div>
           <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Completed</div>
-          <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
+          <div className="text-sm text-pink-800/70">Completed (Today)</div>
+          <div className="text-2xl font-bold text-green-600">{getTodayCompletedCount}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Cancelled</div>
+        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
+          <div className="text-sm text-pink-800/70">Cancelled</div>
           <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <div className="flex space-x-1 border-b pb-2 mb-4">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              console.log(`🔘 Tab clicked: ${tab.id}`);
-              setActiveStatus(tab.id);
-            }}
-            className={`
-              px-4 py-2 rounded-t-lg font-medium transition-all duration-200
-              ${activeStatus === tab.id
-                ? "bg-green-500 text-white shadow-sm"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }
-            `}
-          >
-            <div className="flex items-center">
-              <span>{tab.label}</span>
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeStatus === tab.id 
-                  ? "bg-white bg-opacity-20 text-black" 
-                  : "bg-gray-300 bg-opacity-50"
-              }`}>
-                {getTabCount(tab.id)}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Tab info debug */}
-      <div className="text-sm text-gray-500 mb-2">
-        Showing {getCurrentTabCount} of {getTabCount(activeStatus)} {activeStatus} orders
+      {/* Status Tabs with Today's Date for Completed Tab */}
+      <div className="flex space-x-1 border-b border-pink-800/20 pb-2 mb-4 items-center">
+        <div className="flex-1">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                console.log(`🔘 Tab clicked: ${tab.id}`);
+                setActiveStatus(tab.id);
+              }}
+              className={`
+                mr-2 px-4 py-2 rounded-t-lg font-medium transition-all duration-200
+                ${activeStatus === tab.id
+                  ? "bg-pink-800/45 text-white shadow-sm"
+                  : "bg-[#f8f3ed] hover:bg-pink-50 text-pink-800/70 border border-[#d4789e26]"
+                }
+              `}
+            >
+              <div className="flex items-center">
+                <span>{tab.label}</span>
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeStatus === tab.id 
+                    ? "bg-white bg-opacity-20 text-pink-800/70" 
+                    : "bg-pink-100 text-pink-800/70"
+                }`}>
+                  {getTabCount(tab.id)}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+        
+        {/* Show today's date indicator for completed tab */}
+        {activeStatus === "completed" && (
+          <div className="text-sm text-pink-800/60 bg-pink-50 px-3 py-1 rounded border border-pink-200">
+            <span className="font-medium">Today:</span> {formatDate(new Date())}
+          </div>
+        )}
       </div>
 
       {/* Loading & Error States */}
       {loading && (
-        <div className="p-8 text-center text-gray-500">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        <div className="p-8 text-center text-pink-800/60">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
           <p className="mt-2">Loading orders...</p>
-          <p className="text-sm text-gray-400">Fetching from: http://localhost:3000/orders/list</p>
         </div>
       )}
       
@@ -227,7 +317,7 @@ export default function OrderFulfillmentTab() {
               console.log("🔄 Retry button clicked");
               loadOrders();
             }}
-            className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 rounded text-sm"
+            className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 rounded text-sm border border-red-200"
           >
             Retry
           </button>
@@ -235,9 +325,33 @@ export default function OrderFulfillmentTab() {
       )}
 
       {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-[#d4789e26] overflow-hidden">
         {!loading && error === null && (
           <>
+            {/* Completed Tab Header */}
+            {activeStatus === "completed" && (
+              <div className="p-4 border-b border-pink-200 bg-pink-50">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-pink-800/80">Today's Completed Orders</h3>
+                    <p className="text-sm text-pink-800/60">
+                      Showing {getTodayCompletedCount} orders completed on {formatDate(new Date())}
+                      {stats.completed > getTodayCompletedCount && 
+                        ` (${stats.completed} total completed orders in system)`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleManualRefresh}
+                      className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition-colors text-sm font-medium border border-pink-700"
+                    >
+                      ↻ Refresh
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <OrderTable 
               data={filteredOrders} 
               refreshOrders={loadOrders}
@@ -246,29 +360,27 @@ export default function OrderFulfillmentTab() {
             />
             
             {filteredOrders.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-8 text-center text-pink-800/50">
+                <svg className="w-16 h-16 mx-auto text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p className="mt-2 text-lg">No {activeStatus} orders found</p>
-                <p className="text-sm">Orders with status "{activeStatus}" will appear here</p>
-                <button
-                  onClick={() => {
-                    console.log("🎯 Testing order creation...");
-                    // You can add a test order creation here
-                  }}
-                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create Test Order
-                </button>
+                <p className="mt-2 text-lg text-pink-800/70">
+                  {activeStatus === "completed" 
+                    ? `No orders completed today (${formatDate(new Date())})`
+                    : `No ${activeStatus} orders found`
+                  }
+                </p>
+                <p className="text-sm">
+                  {activeStatus === "completed" 
+                    ? `Orders completed today will appear here (${stats.completed} total completed orders in system)`
+                    : `Orders with status "${activeStatus}" will appear here`
+                  }
+                </p>
               </div>
             )}
           </>
         )}
       </div>
-
-      
-      
     </div>
   );
 }
