@@ -1,4 +1,4 @@
-// File: OrdersUi.jsx
+
 import OrdersTab from "./OrdersTab.jsx"
 
 export default function OrdersUi() {

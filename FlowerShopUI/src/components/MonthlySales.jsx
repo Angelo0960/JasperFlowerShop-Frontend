@@ -175,13 +175,13 @@ const MonthlySales = () => {
 
   return (
     <>
-      {/* Export Button at the top */}
+      {}
       <div className="flex justify-end mb-6">
         <ExportButton activePeriod="monthly" salesData={salesData} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* TOTAL REVENUE */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Total Revenue</h6>
@@ -202,7 +202,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {/* TOTAL ORDERS */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Total Orders</h6>
@@ -218,7 +218,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {/* ITEMS SOLD */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Items Sold</h6>
@@ -234,7 +234,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {/* AVG ORDER VALUE - FIXED with safeAverage */}
+        {}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Average Order Value</h6>
@@ -253,7 +253,7 @@ const MonthlySales = () => {
         </div>
       </div>
 
-      {/* Monthly Sales Trend Chart */}
+      {}
       {chartData.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
           <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Monthly Sales Trend</h3>
@@ -292,7 +292,7 @@ const MonthlySales = () => {
         </div>
       )}
 
-      {/* Top Products */}
+      {}
       {topProducts.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
           <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Top Selling Products</h3>
@@ -319,7 +319,7 @@ const MonthlySales = () => {
         </div>
       )}
 
-      {/* SALES TABLE */}
+      {}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">
         <div className="p-4 border-b border-pink-200">
           <h3 className="text-lg font-semibold text-pink-800/80">Monthly Sales Details</h3>

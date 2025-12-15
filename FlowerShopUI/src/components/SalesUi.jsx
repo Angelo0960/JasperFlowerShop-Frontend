@@ -8,7 +8,7 @@ const SalesUI = () => {
                 <p className="text-gray-600">Track sales, generate reports, and analyze performance</p>
             </div>
 
-            {/* Sales Tabs */}
+            
             <SalesTab />
         </div>
     )
