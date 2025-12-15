@@ -55,7 +55,7 @@ const MonthlySales = () => {
           topProductsData = result.data.topProducts || [];
         }
         
-        console.log(`✅ Monthly sales loaded: ${rawData.length} records`);
+        console.log(`Monthly sales loaded: ${rawData.length} records`);
         
         // Ensure arrays
         if (!Array.isArray(rawData)) rawData = [];
@@ -67,8 +67,8 @@ const MonthlySales = () => {
         setTopProducts(topProductsData);
         
         // DEBUG: Log the summary values
-        console.log("📊 Summary data:", summary);
-        console.log("📊 Summary types:", {
+        console.log("Summary data:", summary);
+        console.log("Summary types:", {
           total_sales: typeof summary.total_sales,
           transaction_count: typeof summary.transaction_count,
           total_items: typeof summary.total_items,
