@@ -1,11 +1,17 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 
 const ProductManagement = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   
-  // Form state
+  // Form state (removed stock_quantity)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -17,42 +23,64 @@ const ProductManagement = () => {
   // Categories for dropdown
   const categories = ["Bouquets", "Plants", "Arrangements", "Accessories"];
 
-  // Mock data for UI demonstration
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Rose Bouquet",
-      description: "Beautiful arrangement of fresh roses",
-      category: "Bouquets",
-      unit_price: "25.99",
-      product_code: "BQT-001",
-      updated_at: "2024-01-15",
-      created_at: "2024-01-01"
-    },
-    {
-      id: 2,
-      name: "Orchid Plant",
-      description: "Elegant orchid in ceramic pot",
-      category: "Plants",
-      unit_price: "35.50",
-      product_code: "PLT-001",
-      updated_at: "2024-01-10",
-      created_at: "2024-01-05"
-    },
-    {
-      id: 3,
-      name: "Wedding Centerpiece",
-      description: "Lavish floral arrangement for weddings",
-      category: "Arrangements",
-      unit_price: "120.00",
-      product_code: "ARR-001",
-      updated_at: "2024-01-12",
-      created_at: "2024-01-08"
-    }
-  ];
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
-  const products = mockProducts;
+  // Filter products when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredProducts(products);
+    } else {
+      const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.product_code.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    }
+  }, [searchTerm, products]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('http://localhost:3000/products');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const text = await response.text();
+      let result;
+      
+      try {
+        result = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Failed to parse JSON:", parseError);
+        throw new Error("Invalid JSON response");
+      }
+      
+      if (result.success) {
+        const productsData = result.data || [];
+        setProducts(productsData);
+        setFilteredProducts(productsData);
+        console.log(`✅ Loaded ${productsData.length} products`);
+      } else {
+        throw new Error(result.message || "Failed to load products");
+      }
+    } catch (error) {
+      console.error('❌ Error fetching products:', error);
+      setError(error.message);
+      setProducts([]);
+      setFilteredProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +98,7 @@ const ProductManagement = () => {
       unit_price: "",
       product_code: ""
     });
+    setCurrentProduct(null);
     setIsEditing(false);
   };
 
@@ -79,6 +108,7 @@ const ProductManagement = () => {
   };
 
   const openEditModal = (product) => {
+    setCurrentProduct(product);
     setFormData({
       name: product.name,
       description: product.description || "",
@@ -95,14 +125,123 @@ const ProductManagement = () => {
     resetForm();
   };
 
-  const handleSubmit = () => {
-    alert(isEditing ? "Update functionality would trigger here" : "Create functionality would trigger here");
-    closeModal();
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      alert('Product name is required');
+      return false;
+    }
+    if (!formData.unit_price || parseFloat(formData.unit_price) <= 0) {
+      alert('Please enter a valid unit price');
+      return false;
+    }
+    return true;
   };
 
-  const handleDeleteProduct = (productId) => {
-    if (confirm("Delete functionality would trigger here")) {
-      alert(`Product ${productId} would be deleted`);
+  const handleCreateProduct = async () => {
+    if (!validateForm()) return;
+
+    try {
+      const productData = {
+        ...formData,
+        unit_price: parseFloat(formData.unit_price)
+      };
+
+      console.log("📤 Creating product:", productData);
+
+      const response = await fetch('http://localhost:3000/products/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData)
+      });
+
+      const result = await response.json();
+      console.log("📥 Create response:", result);
+
+      if (result.success) {
+        alert('✅ Product created successfully!');
+        closeModal();
+        fetchProducts(); // Refresh the list
+      } else {
+        alert(`❌ Failed to create product: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ Error creating product:', error);
+      alert('Failed to create product. Check console for details.');
+    }
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!validateForm() || !currentProduct) return;
+
+    try {
+      const productData = {
+        ...formData,
+        unit_price: parseFloat(formData.unit_price)
+      };
+
+      console.log("📤 Updating product:", productData);
+
+      const response = await fetch(`http://localhost:3000/products/update/${currentProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData)
+      });
+
+      const result = await response.json();
+      console.log("📥 Update response:", result);
+
+      if (result.success) {
+        alert('✅ Product updated successfully!');
+        closeModal();
+        fetchProducts(); // Refresh the list
+      } else {
+        alert(`❌ Failed to update product: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ Error updating product:', error);
+      alert('Failed to update product. Check console for details.');
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log(`🗑️ Deleting product ID: ${productId}`);
+
+      const response = await fetch(`http://localhost:3000/products/delete/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+      console.log("📥 Delete response:", result);
+
+      if (result.success) {
+        alert('✅ Product deleted successfully!');
+        fetchProducts(); // Refresh the list
+      } else {
+        alert(`❌ Failed to delete product: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ Error deleting product:', error);
+      alert('Failed to delete product. Check console for details.');
+    }
+  };
+
+  const handleSubmit = () => {
+    if (isEditing) {
+      handleUpdateProduct();
+    } else {
+      handleCreateProduct();
     }
   };
 
@@ -161,7 +300,7 @@ const ProductManagement = () => {
               <div className="text-sm text-pink-800/60">Showing</div>
             </div>
             <button
-              onClick={() => alert("Refresh functionality would trigger here")}
+              onClick={fetchProducts}
               className="px-4 py-2 bg-[#f8f3ed] hover:bg-pink-50 text-pink-800/70 font-medium rounded-lg transition-colors border border-[#d4789e26] flex items-center"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,98 +329,125 @@ const ProductManagement = () => {
         )}
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center p-12">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mb-4"></div>
+          <p className="text-pink-800/60 text-lg">Loading products...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="text-center p-8 bg-red-50 rounded-lg border border-red-200 mb-6">
+          <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+          <h3 className="text-xl font-semibold text-red-800 mb-2">Error Loading Products</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 border border-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.length === 0 ? (
-          <div className="col-span-full text-center p-12 bg-pink-50 rounded-xl border border-pink-200">
-            <svg className="w-20 h-20 mx-auto text-pink-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <h3 className="text-xl font-semibold text-pink-800/70 mb-2">
-              {searchTerm ? "No Products Found" : "No Products Available"}
-            </h3>
-            <p className="text-pink-800/60 mb-6">
-              {searchTerm 
-                ? `No products match your search for "${searchTerm}"`
-                : "Start by adding your first product"
-              }
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={openAddModal}
-                className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-medium rounded-lg transition-colors border border-pink-700"
-              >
-                <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add First Product
-              </button>
-            )}
-          </div>
-        ) : (
-          filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-[#d4789e26] hover:shadow-md transition-shadow">
-              <div className="p-6">
-                {/* Product Header */}
-                <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
-                  <div>
-                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
-                      {product.category || 'Uncategorized'}
-                    </span>
-                  </div>
-                  <div className="text-xs text-pink-800/60 font-mono bg-pink-50 px-2 py-1 rounded border border-pink-200">
-                    {product.product_code || `ID: ${product.id}`}
-                  </div>
-                </div>
-                
-                {/* Product Name and Description */}
-                <h3 className="text-xl font-semibold text-pink-800/80 mb-3">
-                  {product.name}
-                </h3>
-                
-                <p className="text-pink-800/70 text-sm mb-6 min-h-[60px]">
-                  {product.description || 'No description available'}
-                </p>
-                
-                {/* Price and Actions */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="text-2xl font-bold text-pink-800/80">
-                      ₱{parseFloat(product.unit_price || 0).toFixed(2)}
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.length === 0 ? (
+            <div className="col-span-full text-center p-12 bg-pink-50 rounded-xl border border-pink-200">
+              <svg className="w-20 h-20 mx-auto text-pink-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-xl font-semibold text-pink-800/70 mb-2">
+                {searchTerm ? "No Products Found" : "No Products Available"}
+              </h3>
+              <p className="text-pink-800/60 mb-6">
+                {searchTerm 
+                  ? `No products match your search for "${searchTerm}"`
+                  : "Start by adding your first product"
+                }
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={openAddModal}
+                  className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-medium rounded-lg transition-colors border border-pink-700"
+                >
+                  <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add First Product
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredProducts.map((product) => (
+              <div key={product.id} className="bg-white rounded-xl shadow-sm border border-[#d4789e26] hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  {/* Product Header - Removed stock badge */}
+                  <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
+                    <div>
+                      <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
+                        {product.category || 'Uncategorized'}
+                      </span>
                     </div>
-                    <div className="text-sm text-pink-800/60 mt-1">
-                      Last updated: {new Date(product.updated_at || product.created_at).toLocaleDateString()}
+                    <div className="text-xs text-pink-800/60 font-mono bg-pink-50 px-2 py-1 rounded border border-pink-200">
+                      {product.product_code || `ID: ${product.id}`}
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(product)}
-                      className="px-4 py-2 bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium rounded-lg transition-colors border border-pink-200 flex items-center"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors border border-red-200 flex items-center"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
+                  {/* Product Name and Description */}
+                  <h3 className="text-xl font-semibold text-pink-800/80 mb-3">
+                    {product.name}
+                  </h3>
+                  
+                  <p className="text-pink-800/70 text-sm mb-6 min-h-[60px]">
+                    {product.description || 'No description available'}
+                  </p>
+                  
+                  {/* Price and Actions */}
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="text-2xl font-bold text-pink-800/80">
+                        ₱{parseFloat(product.unit_price || 0).toFixed(2)}
+                      </div>
+                      <div className="text-sm text-pink-800/60 mt-1">
+                        Last updated: {new Date(product.updated_at || product.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="px-4 py-2 bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium rounded-lg transition-colors border border-pink-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors border border-red-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
-      {/* Add/Edit Product Modal */}
+      {/* Add/Edit Product Modal - Removed Stock Quantity field */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#d4789e26]">
@@ -305,7 +471,7 @@ const ProductManagement = () => {
               </p>
             </div>
 
-            {/* Modal Body */}
+            {/* Modal Body - Removed Stock Quantity field */}
             <div className="p-6">
               <div className="space-y-6">
                 {/* Product Name */}
@@ -373,7 +539,7 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                {/* Unit Price */}
+                {/* Unit Price (now single field instead of grid with stock) */}
                 <div>
                   <label className="block text-sm font-medium text-pink-800/70 mb-2">
                     Unit Price (₱) *
