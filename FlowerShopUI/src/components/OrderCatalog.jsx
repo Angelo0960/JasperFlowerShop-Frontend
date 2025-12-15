@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SearchBar from "./SearchBar";
+import OrderModal from "./OrderModal"; // Add this import
 
 const OrderCatalog = () => {
   const [products, setProducts] = useState([]);
@@ -8,17 +9,39 @@ const OrderCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  // Changed from modal state to view state
-  const [currentView, setCurrentView] = useState("cart"); // "cart" or "checkout"
+  const [currentView, setCurrentView] = useState("cart");
   const [customerName, setCustomerName] = useState("");
   const [staffName, setStaffName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [cashReceived, setCashReceived] = useState("");
   const [change, setChange] = useState(0);
+  const [showReceipt, setShowReceipt] = useState(false); // Add this state
+  const [lastOrder, setLastOrder] = useState(null); // Add this state to store the created order
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Add formatCurrency function
+  const formatCurrency = (amount) => {
+    return `₱${parseFloat(amount || 0).toFixed(2)}`;
+  };
+
+  // Add formatDate function
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Add formatStatus function
+  const formatStatus = (status) => {
+    return status ? status.replace('-', ' ') : 'Unknown';
+  };
 
   const fetchProducts = async () => {
     try {
@@ -60,7 +83,6 @@ const OrderCatalog = () => {
     }
   };
 
-  // Handle search results from SearchBar
   const handleSearchResults = (results, term) => {
     setFilteredProducts(results);
     setSearchTerm(term);
@@ -127,16 +149,12 @@ const OrderCatalog = () => {
     setChange(0);
   };
 
-  const calculateChange = () => {
-    const grandTotal = calculateGrandTotal();
-    const cash = parseFloat(cashReceived) || 0;
-    const calculatedChange = cash - grandTotal;
-    setChange(calculatedChange > 0 ? calculatedChange : 0);
-  };
-
   useEffect(() => {
     if (paymentMethod === "cash" && cashReceived) {
-      calculateChange();
+      const grandTotal = calculateGrandTotal();
+      const cash = parseFloat(cashReceived) || 0;
+      const calculatedChange = cash - grandTotal;
+      setChange(calculatedChange > 0 ? calculatedChange : 0);
     }
   }, [cashReceived, paymentMethod]);
 
@@ -177,7 +195,6 @@ const OrderCatalog = () => {
       cash_received: paymentMethod === "cash" ? parseFloat(cashReceived) : 0,
       change_amount: paymentMethod === "cash" ? change : 0,
       notes: 'Order from web interface',
-      // Include status for order
       status: 'pending'
     };
 
@@ -196,14 +213,27 @@ const OrderCatalog = () => {
       console.log("📋 Order creation response:", result);
       
       if (result.success) {
+        // Store the created order for the receipt
+        const createdOrder = {
+          ...orderData,
+          id: result.data.id,
+          order_code: result.data.order_code,
+          created_at: new Date().toISOString()
+        };
+        
+        setLastOrder(createdOrder);
+        
+        // Clear cart and show receipt
         setCart([]);
-        alert(`Order created successfully!\nOrder Code: ${result.data.order_code}\nTotal: ₱${calculateGrandTotal().toFixed(2)}`);
+        
+        // Show receipt modal instead of alert
+        setShowReceipt(true);
         
         if (window.refreshOrders) {
           window.refreshOrders();
         }
         
-        handleBackToCart();
+        // Don't go back to cart automatically - let user close the receipt first
       } else {
         alert(`Failed to create order: ${result.message}`);
       }
@@ -213,6 +243,13 @@ const OrderCatalog = () => {
     }
   };
 
+  // Add function to close receipt and go back to cart
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setLastOrder(null);
+    handleBackToCart();
+  };
+
   const clearSearch = () => {
     setFilteredProducts(products);
     setSearchTerm('');
@@ -220,14 +257,13 @@ const OrderCatalog = () => {
 
   return (
     <div className="p-4">
-      
+      {/* Header Section */}
       <div className="mb-8">
-        {/* Title and Stats */}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Order Catalog</h2>
-              <p className="text-gray-600">
+              <h2 className="text-xl font-bold text-pink-800/80">Order Catalog</h2>
+              <p className="text-pink-800/60">
                 {filteredProducts.length} of {products.length} products shown
                 {searchTerm && ` • Searching: "${searchTerm}"`}
               </p>
@@ -241,7 +277,7 @@ const OrderCatalog = () => {
               />
               <button
                 onClick={fetchProducts}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors whitespace-nowrap"
+                className="px-4 py-2 bg-[#f8f3ed] rounded hover:bg-pink-50 transition-colors whitespace-nowrap border border-[#d4789e26] text-pink-800/70"
               >
                 Refresh Products
               </button>
@@ -251,17 +287,17 @@ const OrderCatalog = () => {
 
         {/* Search Status Display */}
         {searchTerm && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <span className="font-medium text-blue-800">Search Results:</span>
-                <span className="ml-2 text-blue-700">
+                <span className="font-medium text-pink-800">Search Results:</span>
+                <span className="ml-2 text-pink-700">
                   Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} for "{searchTerm}"
                 </span>
               </div>
               <button
                 onClick={clearSearch}
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                className="text-sm text-pink-600 hover:text-pink-800 hover:underline"
               >
                 Clear Search
               </button>
@@ -276,11 +312,11 @@ const OrderCatalog = () => {
         <section className="flex-1">
           {loading ? (
             <div className="text-center p-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mb-4"></div>
-              <p className="text-gray-600">Loading products...</p>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mb-4"></div>
+              <p className="text-pink-800/60">Loading products...</p>
             </div>
           ) : error ? (
-            <div className="text-center p-8 bg-red-50 rounded-lg">
+            <div className="text-center p-8 bg-red-50 rounded-lg border border-red-200">
               <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
@@ -288,13 +324,13 @@ const OrderCatalog = () => {
               <p className="text-red-700 mb-4">{error}</p>
               <button
                 onClick={fetchProducts}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 border border-red-700"
               >
                 Try Again
               </button>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center p-8 bg-yellow-50 rounded-lg">
+            <div className="text-center p-8 bg-yellow-50 rounded-lg border border-yellow-200">
               <svg className="w-16 h-16 mx-auto text-yellow-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
@@ -310,7 +346,7 @@ const OrderCatalog = () => {
               {searchTerm && (
                 <button
                   onClick={clearSearch}
-                  className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                  className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 border border-yellow-700"
                 >
                   View All Products
                 </button>
@@ -319,57 +355,47 @@ const OrderCatalog = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <div key={product.id} className="bg-white border border-[#d4789e26] rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <div className="p-6">
                     <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
                       <div>
+                        {/* Removed stock badge, only showing category */}
                         <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
-                          product.category === 'Bouquets' ? 'bg-purple-100 text-purple-800' :
-                          product.category === 'Plants' ? 'bg-green-100 text-green-800' :
-                          product.category === 'Arrangements' ? 'bg-pink-100 text-pink-800' :
-                          'bg-gray-100 text-gray-800'
+                          product.category === 'Bouquets' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                          product.category === 'Plants' ? 'bg-green-100 text-green-800 border border-green-200' :
+                          product.category === 'Arrangements' ? 'bg-pink-100 text-pink-800 border border-pink-200' :
+                          'bg-gray-100 text-gray-800 border border-gray-200'
                         }`}>
                           {product.category || 'Uncategorized'}
                         </span>
-                        <span className={`ml-2 inline-block px-2 py-1 text-xs font-semibold rounded ${
-                          product.stock_quantity === 0 ? 'bg-red-100 text-red-800' :
-                          product.stock_quantity < 10 ? 'bg-orange-100 text-orange-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {product.stock_quantity === 0 ? 'Out of Stock' : `Stock: ${product.stock_quantity}`}
-                        </span>
                       </div>
-                      <div className="text-xs text-gray-500 font-mono">
+                      <div className="text-xs text-pink-800/60 font-mono">
                         {product.product_code}
                       </div>
                     </div>
                     
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h3 className="text-xl font-semibold text-pink-800/80 mb-2">
                       {product.name}
                     </h3>
                     
-                    <p className="text-gray-600 text-sm mb-4 min-h-[40px]">
+                    <p className="text-pink-800/70 text-sm mb-4 min-h-[40px]">
                       {product.description || 'No description available'}
                     </p>
                     
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <span className="text-2xl font-bold text-gray-900">
+                        <span className="text-2xl font-bold text-pink-800/80">
                           ₱{parseFloat(product.unit_price || 0).toFixed(2)}
                         </span>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-pink-800/60 mt-1">
                           ID: {product.id}
                         </div>
                       </div>
                       
+                      {/* Removed stock check from button disable condition */}
                       <button
                         onClick={() => addToCart(product)}
-                        disabled={product.stock_quantity === 0}
-                        className={`flex items-center px-4 py-2 rounded-lg font-medium transition ${
-                          product.stock_quantity === 0
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
+                        className="flex items-center px-4 py-2 rounded-lg font-medium transition border bg-pink-600 hover:bg-pink-700 text-white border-pink-700"
                       >
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -384,31 +410,31 @@ const OrderCatalog = () => {
           )}
         </section>
 
-        {/* Right Panel - switches between Cart and Checkout */}
-        <section className="lg:w-96 bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-6">
+        {/* Right Panel - Cart/Checkout */}
+        <section className="lg:w-96 bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-6 border border-[#d4789e26]">
           {currentView === "cart" ? (
             /* CART VIEW */
             <>
               {/* Header */}
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Current Order</h2>
-                  <p className="text-sm text-gray-500 mt-1">{cart.length} item{cart.length !== 1 ? 's' : ''} in cart</p>
+                  <h2 className="text-2xl font-bold text-pink-800/80">Current Order</h2>
+                  <p className="text-sm text-pink-800/60 mt-1">{cart.length} item{cart.length !== 1 ? 's' : ''} in cart</p>
                 </div>
-                <div className="bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-1.5 rounded-full">
+                <div className="bg-pink-50 text-pink-700 text-sm font-semibold px-3 py-1.5 rounded-full border border-pink-200">
                   ₱{calculateGrandTotal().toFixed(2)}
                 </div>
               </div>
 
               {cart.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-pink-100 rounded-full flex items-center justify-center border border-pink-200">
+                    <svg className="w-10 h-10 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Your cart is empty</h3>
-                  <p className="text-gray-500 text-sm">Browse products and add items to your order</p>
+                  <h3 className="text-lg font-medium text-pink-800/70 mb-2">Your cart is empty</h3>
+                  <p className="text-pink-800/60 text-sm">Browse products and add items to your order</p>
                 </div>
               ) : (
                 <>
@@ -416,24 +442,24 @@ const OrderCatalog = () => {
                   <div className="mb-8 max-h-96 overflow-y-auto pr-2">
                     <div className="space-y-4">
                       {cart.map((item) => (
-                        <div key={item.id} className="flex items-start p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                        <div key={item.id} className="flex items-start p-4 bg-pink-50 border border-pink-200 rounded-xl hover:bg-pink-100 transition-colors duration-200">
                           {/* Item Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
                               <div>
-                                <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
+                                <h4 className="font-semibold text-pink-800/80 truncate">{item.name}</h4>
                                 <div className="flex items-center mt-1 space-x-2">
-                                  <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                  <span className="text-xs font-medium px-2 py-0.5 bg-pink-100 text-pink-700 rounded border border-pink-200">
                                     {item.category}
                                   </span>
-                                  <span className="text-xs text-gray-500">•</span>
-                                  <span className="text-xs text-gray-600">₱{parseFloat(item.unit_price).toFixed(2)} each</span>
+                                  <span className="text-xs text-pink-800/40">•</span>
+                                  <span className="text-xs text-pink-800/60">₱{parseFloat(item.unit_price).toFixed(2)} each</span>
                                 </div>
                               </div>
                               {/* DELETE BUTTON */}
                               <button
                                 onClick={() => removeFromCart(item.id)}
-                                className="ml-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                                className="ml-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium transition-colors flex items-center gap-1 border border-red-200"
                                 title="Remove item from cart"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,44 +469,36 @@ const OrderCatalog = () => {
                               </button>
                             </div>
                             
-                            {/* Quantity Controls and Price */}
+                            {/* Quantity Controls and Price - Removed stock limit */}
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center space-x-2">
-                                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                                <div className="flex items-center border border-pink-300 rounded-lg overflow-hidden bg-white">
                                   <button
                                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                    className="w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-100 text-gray-600 transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center hover:bg-pink-100 text-pink-600 transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                                     </svg>
                                   </button>
-                                  <span className="w-8 text-center font-semibold text-gray-900">
+                                  <span className="w-8 text-center font-semibold text-pink-800/80 bg-pink-50">
                                     {item.quantity}
                                   </span>
                                   <button
                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                    disabled={item.stock_quantity <= item.quantity}
-                                    className={`w-8 h-8 flex items-center justify-center bg-white text-gray-600 transition-colors ${
-                                      item.stock_quantity <= item.quantity
-                                        ? 'opacity-40 cursor-not-allowed'
-                                        : 'hover:bg-gray-100'
-                                    }`}
+                                    className="w-8 h-8 flex items-center justify-center hover:bg-pink-100 text-pink-600 transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                     </svg>
                                   </button>
                                 </div>
-                                <span className="text-sm text-gray-500">
-                                  Max: {item.stock_quantity}
-                                </span>
                               </div>
                               <div className="text-right">
-                                <div className="text-lg font-bold text-gray-900">
+                                <div className="text-lg font-bold text-pink-800/80">
                                   ₱{(item.unit_price * item.quantity).toFixed(2)}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-pink-800/60">
                                   ₱{parseFloat(item.unit_price).toFixed(2)} × {item.quantity}
                                 </div>
                               </div>
@@ -494,23 +512,23 @@ const OrderCatalog = () => {
                   {/* Order Summary */}
                   <div className="space-y-4">
                     {/* Order Details */}
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <div className="bg-pink-50 rounded-xl p-4 space-y-3 border border-pink-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Subtotal</span>
-                        <span className="font-medium text-gray-900">₱{calculateTotal().toFixed(2)}</span>
+                        <span className="text-pink-800/70">Subtotal</span>
+                        <span className="font-medium text-pink-800/80">₱{calculateTotal().toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Tax (8%)</span>
-                        <span className="font-medium text-gray-900">₱{calculateTax().toFixed(2)}</span>
+                        <span className="text-pink-800/70">Tax (8%)</span>
+                        <span className="font-medium text-pink-800/80">₱{calculateTax().toFixed(2)}</span>
                       </div>
-                      <div className="border-t border-gray-300 pt-3">
+                      <div className="border-t border-pink-300 pt-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-lg font-semibold text-gray-900">Total</span>
+                          <span className="text-lg font-semibold text-pink-800/80">Total</span>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">
+                            <div className="text-2xl font-bold text-pink-800/80">
                               ₱{calculateGrandTotal().toFixed(2)}
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-pink-800/60 mt-1">
                               Including tax and fees
                             </div>
                           </div>
@@ -521,7 +539,7 @@ const OrderCatalog = () => {
                     {/* Checkout Button */}
                     <button
                       onClick={handleOpenCheckout}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+                      className="w-full bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 border border-pink-700"
                     >
                       <div className="flex items-center justify-center">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -538,28 +556,28 @@ const OrderCatalog = () => {
             /* CHECKOUT VIEW */
             <>
               {/* Header */}
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Complete Payment</h2>
-                  <p className="text-sm text-gray-500 mt-1">Order total: ₱{calculateGrandTotal().toFixed(2)}</p>
+                  <h2 className="text-2xl font-bold text-pink-800/80">Complete Payment</h2>
+                  <p className="text-sm text-pink-800/60 mt-1">Order total: ₱{calculateGrandTotal().toFixed(2)}</p>
                 </div>
                 <button
                   onClick={handleBackToCart}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-sm text-pink-600 hover:text-pink-800 hover:underline"
                 >
                   ← Back to Cart
                 </button>
               </div>
 
               {/* Total Amount */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                <div className="text-sm text-gray-600 mb-1">Total Amount</div>
-                <div className="text-3xl font-bold text-gray-900">₱{calculateGrandTotal().toFixed(2)}</div>
+              <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
+                <div className="text-sm text-pink-800/70 mb-1">Total Amount</div>
+                <div className="text-3xl font-bold text-pink-800/80">₱{calculateGrandTotal().toFixed(2)}</div>
               </div>
 
               {/* Customer Name */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Customer Name
                 </label>
                 <input
@@ -567,13 +585,13 @@ const OrderCatalog = () => {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Enter customer name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="w-full px-4 py-3 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white"
                 />
               </div>
 
               {/* Staff Name */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Staff Name
                 </label>
                 <input
@@ -581,13 +599,13 @@ const OrderCatalog = () => {
                   value={staffName}
                   onChange={(e) => setStaffName(e.target.value)}
                   placeholder="Enter your name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="w-full px-4 py-3 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white"
                 />
               </div>
 
               {/* Payment Method */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Select Payment Method
                 </label>
                 <div className="flex gap-4">
@@ -595,8 +613,8 @@ const OrderCatalog = () => {
                     onClick={() => setPaymentMethod("cash")}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 transition ${
                       paymentMethod === "cash"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
+                        ? "border-pink-600 bg-pink-50 text-pink-700"
+                        : "border-pink-300 bg-white hover:border-pink-400"
                     }`}
                   >
                     <div className="font-medium">Cash</div>
@@ -605,8 +623,8 @@ const OrderCatalog = () => {
                     onClick={() => setPaymentMethod("card")}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 transition ${
                       paymentMethod === "card"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
+                        ? "border-pink-600 bg-pink-50 text-pink-700"
+                        : "border-pink-300 bg-white hover:border-pink-400"
                     }`}
                   >
                     <div className="font-medium">Card</div>
@@ -618,17 +636,17 @@ const OrderCatalog = () => {
               {paymentMethod === "cash" && (
                 <>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-pink-800/70 mb-2">
                       Cash Received
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-pink-800/60">₱</span>
                       <input
                         type="number"
                         value={cashReceived}
                         onChange={(e) => setCashReceived(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        className="w-full pl-10 pr-4 py-3 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white"
                         min="0"
                         step="0.01"
                       />
@@ -646,20 +664,20 @@ const OrderCatalog = () => {
               )}
 
               {/* Order Summary */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                <div className="text-sm font-medium text-gray-700 mb-3">Order Summary</div>
+              <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
+                <div className="text-sm font-medium text-pink-800/70 mb-3">Order Summary</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Items ({cart.length})</span>
-                    <span className="font-medium">₱{calculateTotal().toFixed(2)}</span>
+                    <span className="text-pink-800/70">Items ({cart.length})</span>
+                    <span className="font-medium text-pink-800/80">₱{calculateTotal().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tax (8%)</span>
-                    <span className="font-medium">₱{calculateTax().toFixed(2)}</span>
+                    <span className="text-pink-800/70">Tax (8%)</span>
+                    <span className="font-medium text-pink-800/80">₱{calculateTax().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-300">
-                    <span className="font-medium">Total</span>
-                    <span className="font-bold">₱{calculateGrandTotal().toFixed(2)}</span>
+                  <div className="flex justify-between pt-2 border-t border-pink-300">
+                    <span className="font-medium text-pink-800/80">Total</span>
+                    <span className="font-bold text-pink-800/80">₱{calculateGrandTotal().toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -668,10 +686,10 @@ const OrderCatalog = () => {
               <button
                 onClick={handleProcessPayment}
                 disabled={paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < calculateGrandTotal())}
-                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 border ${
                   paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < calculateGrandTotal())
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-lg active:translate-y-0"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400"
+                    : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-lg active:translate-y-0 border-green-700"
                 }`}
               >
                 <div className="flex items-center justify-center">
@@ -685,6 +703,17 @@ const OrderCatalog = () => {
           )}
         </section>
       </div>
+
+      {/* Order Receipt Modal */}
+      {showReceipt && lastOrder && (
+        <OrderModal
+          order={lastOrder}
+          onClose={handleCloseReceipt}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          formatStatus={formatStatus}
+        />
+      )}
     </div>
   );
 };
