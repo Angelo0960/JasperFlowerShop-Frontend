@@ -1,42 +1,215 @@
-const ExportButton = () => {
-  
-  return (
+import { useState, useEffect } from 'react';
 
-    <div className="flex items-center space-x-4">
+const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMonth }) => {
+  const [exporting, setExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [localSelectedMonth, setLocalSelectedMonth] = useState(selectedMonth || new Date().getMonth() + 1);
 
-      {}
+  // Generate month options
+  const months = [
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' }
+  ];
+
+  // Sync with parent component if props change
+  useEffect(() => {
+    if (selectedMonth !== undefined) {
+      setLocalSelectedMonth(selectedMonth);
+    }
+  }, [selectedMonth]);
+
+  const handleMonthChange = (e) => {
+    const month = parseInt(e.target.value);
+    setLocalSelectedMonth(month);
+    if (onMonthChange) {
+      onMonthChange(month);
+    }
+  };
+
+  const exportToCSV = () => {
+    if (!salesData || salesData.length === 0) {
+      alert('No sales data available to export');
+      return;
+    }
+
+    try {
+      // Get headers from the data structure
+      let headers = [];
+      if (salesData.length > 0) {
+        // Try to get headers from first object
+        headers = Object.keys(salesData[0]);
+        
+        // If the data is nested, try to flatten it
+        if (headers.length === 0 && typeof salesData[0] === 'object') {
+          // Try common sales data keys
+          headers = [
+            'sale_code', 'sale_date', 'sale_time', 'customer_name', 
+            'staff_name', 'items_count', 'total_amount', 'payment_method', 
+            'order_id', 'status'
+          ];
+        }
+      }
       
-      <div className="relative">
-        <select
-          className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="csv">CSV (.csv)</option>
-          <option value="excel">Excel (.xlsx)</option>
-          <option value="pdf">PDF (.pdf)</option>
-        </select>
-        <div className="text-xs text-gray-500 mt-1 text-center">Format</div>
-      </div>
+      if (headers.length === 0) {
+        headers = ['Date', 'Customer', 'Items', 'Amount', 'Payment Method'];
+      }
 
-      {}
-      <div className="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 min-w-[120px]">
-        <div className="flex items-center justify-center">
-          <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="text-gray-700 font-medium">Today</span>
+      // Create CSV content
+      const csvRows = [
+        // Headers
+        headers.join(','),
+        // Data rows
+        ...salesData.map(row => {
+          return headers.map(header => {
+            let value = '';
+            
+            if (row[header] !== undefined) {
+              value = row[header];
+            } else if (row[header.toLowerCase()] !== undefined) {
+              value = row[header.toLowerCase()];
+            } else if (header === 'Date' && (row.sale_date || row.formatted_date)) {
+              value = row.sale_date || row.formatted_date;
+            } else if (header === 'Customer' && row.customer_name) {
+              value = row.customer_name;
+            } else if (header === 'Items' && (row.items_count || row.items)) {
+              value = row.items_count || row.items;
+            } else if (header === 'Amount' && (row.total_amount || row.amount)) {
+              value = row.total_amount || row.amount;
+            } else if (header === 'Payment Method' && row.payment_method) {
+              value = row.payment_method;
+            }
+            
+            // Handle values that might contain commas or quotes
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            // Escape quotes and wrap in quotes if contains comma or quote
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+          }).join(',')
+        })
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      const monthName = getMonthName(localSelectedMonth);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${monthName}_sales_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
+  const handleExport = () => {
+    if (exporting) return;
+    
+    setExporting(true);
+    
+    try {
+      exportToCSV();
+    } catch (error) {
+      console.error('Error during export:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const getExportButtonText = () => {
+    if (exporting) return 'Exporting...';
+    return `Export Data (${exportFormat.toUpperCase()})`;
+  };
+
+  const getMonthName = (monthNumber) => {
+    return months.find(m => m.value === monthNumber)?.label || 'Month';
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+      <div className="flex items-center gap-4">
+        {/* Format Selector */}
+        <div className="flex flex-col">
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value)}
+            className="bg-white border border-pink-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-pink-800"
+            disabled={exporting}
+          >
+            <option value="csv">CSV (.csv)</option>
+          </select>
+          <div className="text-xs text-pink-600/70 mt-1 text-center">Format</div>
         </div>
-        <div className="text-xs text-gray-500 mt-1 text-center">Period</div>
+
+        {/* Month Selector */}
+        <div className="flex flex-col">
+          <select
+            value={localSelectedMonth}
+            onChange={handleMonthChange}
+            className="border border-pink-300 rounded-lg px-3 py-2 text-pink-800 bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm w-48"
+            disabled={exporting}
+          >
+            {months.map(month => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs text-pink-600/70 mt-1 text-center">Month</div>
+        </div>
       </div>
 
-      {}
-      <button
-        className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 min-w-[200px] justify-center"
-      >
-        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Export Daily Data (CSV)
-      </button>
+      {/* Export Button - Pink Themed */}
+      <div>
+        <button
+          onClick={handleExport}
+          disabled={exporting || salesData.length === 0}
+          className={`flex items-center bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 justify-center ${
+            exporting ? 'opacity-50 cursor-not-allowed' : 
+            salesData.length === 0 ? 'opacity-50 cursor-not-allowed hover:from-pink-600 hover:to-pink-700' : 
+            'hover:shadow-lg hover:scale-105'
+          }`}
+        >
+          {exporting ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Exporting...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {getExportButtonText()}
+            </>
+          )}
+        </button>
+        <div className="text-xs text-pink-600/70 mt-1 text-center">
+          Export {getMonthName(localSelectedMonth)} Sales
+        </div>
+      </div>
     </div>
   );
 };
