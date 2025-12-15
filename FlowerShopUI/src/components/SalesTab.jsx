@@ -7,9 +7,9 @@ export default function SalesTab() {
   const [salesPeriod, setSalesPeriod] = useState("daily");
 
   const tabs = [
-    { id: "daily", label: "Daily", component: <DailySales /> },
-    { id: "weekly", label: "Weekly", component: <WeeklySales /> },
-    { id: "monthly", label: "Monthly", component: <MonthlySales /> }
+    { id: "daily", label: "Daily", component: <DailySales range="day" /> },
+    { id: "weekly", label: "Weekly", component: <WeeklySales range="week" /> },
+    { id: "monthly", label: "Monthly", component: <MonthlySales range="month" /> }
   ];
 
   return (
@@ -34,12 +34,13 @@ export default function SalesTab() {
               }
             `}
           >
+            {/* ... icon code ... */}
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Component loader */}
+      {/* Component loader - NO ExportButton here anymore */}
       <div className="p-4">
         {tabs.map((tab) => (
           <div key={tab.id} className={salesPeriod === tab.id ? "block" : "hidden"}>
