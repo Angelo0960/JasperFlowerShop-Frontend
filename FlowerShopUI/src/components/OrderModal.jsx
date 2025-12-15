@@ -28,9 +28,9 @@ const OrderModal = ({ order, onClose, formatCurrency, formatDate, formatStatus }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md border border-gray-300">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md border border-pink-300">
         {/* Receipt Header */}
-        <div className="p-4 border-b border-gray-300 text-center">
+        <div className="p-4 border-b border-pink-300 text-center">
           <div className="text-xs text-gray-500 mb-1">FLOWER SHOP</div>
           <h2 className="text-lg font-bold text-gray-800">ORDER RECEIPT</h2>
           <div className="text-xs text-gray-500 mt-1">#{order.order_code}</div>
@@ -68,7 +68,7 @@ const OrderModal = ({ order, onClose, formatCurrency, formatDate, formatStatus }
             <div className="text-xs font-medium text-gray-700 mb-2">CUSTOMER</div>
             <div className="text-sm text-gray-800">{order.customer_name || 'Walk-in Customer'}</div>
             {order.customer_phone && (
-              <div className="text-xs text-gray-600 mt-1">📞 {order.customer_phone}</div>
+              <div className="text-xs text-gray-600 mt-1"> {order.customer_phone}</div>
             )}
             {order.staff_name && (
               <div className="text-xs text-gray-600 mt-1">Staff: {order.staff_name}</div>
