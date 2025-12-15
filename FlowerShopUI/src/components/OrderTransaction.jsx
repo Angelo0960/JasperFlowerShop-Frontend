@@ -1,4 +1,4 @@
-// File: OrderTransaction.jsx
+
 import OrderCatalog from './OrderCatalog.jsx';
 
 const OrderTransaction = () => {
@@ -10,7 +10,7 @@ const OrderTransaction = () => {
             </div>
             
             <div className="mb-6">
-                {/* Additional UI elements could go here */}
+   
             </div>
             
             <OrderCatalog />

@@ -11,7 +11,7 @@ const ProductManagement = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Form state (removed stock_quantity)
+ 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -20,15 +20,15 @@ const ProductManagement = () => {
     product_code: ""
   });
 
-  // Categories for dropdown
+  
   const categories = ["Bouquets", "Plants", "Arrangements", "Accessories"];
 
-  // Fetch products on component mount
+  
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Filter products when search term changes
+  
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredProducts(products);
@@ -162,7 +162,7 @@ const ProductManagement = () => {
       if (result.success) {
         alert('✅ Product created successfully!');
         closeModal();
-        fetchProducts(); // Refresh the list
+        fetchProducts(); 
       } else {
         alert(`❌ Failed to create product: ${result.message}`);
       }
@@ -197,7 +197,7 @@ const ProductManagement = () => {
       if (result.success) {
         alert('✅ Product updated successfully!');
         closeModal();
-        fetchProducts(); // Refresh the list
+        fetchProducts(); 
       } else {
         alert(`❌ Failed to update product: ${result.message}`);
       }
@@ -227,7 +227,7 @@ const ProductManagement = () => {
 
       if (result.success) {
         alert('✅ Product deleted successfully!');
-        fetchProducts(); // Refresh the list
+        fetchProducts(); 
       } else {
         alert(`❌ Failed to delete product: ${result.message}`);
       }
@@ -256,7 +256,7 @@ const ProductManagement = () => {
 
   return (
     <div className="p-6">
-      {/* Header Section */}
+      
       <div className="mb-8 p-6 bg-pink-50 rounded-xl border border-pink-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
@@ -275,7 +275,7 @@ const ProductManagement = () => {
           </button>
         </div>
 
-        {/* Search and Stats Bar */}
+        
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-96">
             <input
@@ -311,7 +311,7 @@ const ProductManagement = () => {
           </div>
         </div>
 
-        {/* Search Status */}
+        
         {searchTerm && (
           <div className="mt-4 p-3 bg-pink-100 border border-pink-200 rounded-lg">
             <div className="flex justify-between items-center">
@@ -329,7 +329,7 @@ const ProductManagement = () => {
         )}
       </div>
 
-      {/* Loading State */}
+      
       {loading && (
         <div className="text-center p-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mb-4"></div>
@@ -337,7 +337,7 @@ const ProductManagement = () => {
         </div>
       )}
 
-      {/* Error State */}
+      
       {error && !loading && (
         <div className="text-center p-8 bg-red-50 rounded-lg border border-red-200 mb-6">
           <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,7 +354,7 @@ const ProductManagement = () => {
         </div>
       )}
 
-      {/* Products Grid */}
+      
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.length === 0 ? (
@@ -387,7 +387,7 @@ const ProductManagement = () => {
             filteredProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-xl shadow-sm border border-[#d4789e26] hover:shadow-md transition-shadow">
                 <div className="p-6">
-                  {/* Product Header - Removed stock badge */}
+                  
                   <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
                     <div>
                       <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
@@ -399,7 +399,7 @@ const ProductManagement = () => {
                     </div>
                   </div>
                   
-                  {/* Product Name and Description */}
+                  
                   <h3 className="text-xl font-semibold text-pink-800/80 mb-3">
                     {product.name}
                   </h3>
@@ -408,7 +408,7 @@ const ProductManagement = () => {
                     {product.description || 'No description available'}
                   </p>
                   
-                  {/* Price and Actions */}
+                  
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="text-2xl font-bold text-pink-800/80">
@@ -447,11 +447,11 @@ const ProductManagement = () => {
         </div>
       )}
 
-      {/* Add/Edit Product Modal - Removed Stock Quantity field */}
+      
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#d4789e26]">
-            {/* Modal Header */}
+            
             <div className="p-6 border-b border-pink-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-pink-800/80">
@@ -471,10 +471,10 @@ const ProductManagement = () => {
               </p>
             </div>
 
-            {/* Modal Body - Removed Stock Quantity field */}
+           
             <div className="p-6">
               <div className="space-y-6">
-                {/* Product Name */}
+                
                 <div>
                   <label className="block text-sm font-medium text-pink-800/70 mb-2">
                     Product Name *
@@ -490,7 +490,7 @@ const ProductManagement = () => {
                   />
                 </div>
 
-                {/* Description */}
+               
                 <div>
                   <label className="block text-sm font-medium text-pink-800/70 mb-2">
                     Description
@@ -506,7 +506,7 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Category */}
+                  
                   <div>
                     <label className="block text-sm font-medium text-pink-800/70 mb-2">
                       Category *
@@ -523,7 +523,7 @@ const ProductManagement = () => {
                     </select>
                   </div>
 
-                  {/* Product Code */}
+                 
                   <div>
                     <label className="block text-sm font-medium text-pink-800/70 mb-2">
                       Product Code
@@ -539,7 +539,7 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                {/* Unit Price (now single field instead of grid with stock) */}
+                
                 <div>
                   <label className="block text-sm font-medium text-pink-800/70 mb-2">
                     Unit Price (₱) *
@@ -562,7 +562,7 @@ const ProductManagement = () => {
               </div>
             </div>
 
-            {/* Modal Footer */}
+            
             <div className="p-6 border-t border-pink-200">
               <div className="flex justify-end gap-3">
                 <button

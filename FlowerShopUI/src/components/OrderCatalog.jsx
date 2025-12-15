@@ -15,19 +15,19 @@ const OrderCatalog = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [cashReceived, setCashReceived] = useState("");
   const [change, setChange] = useState(0);
-  const [showReceipt, setShowReceipt] = useState(false); // Add this state
-  const [lastOrder, setLastOrder] = useState(null); // Add this state to store the created order
+  const [showReceipt, setShowReceipt] = useState(false); 
+  const [lastOrder, setLastOrder] = useState(null); 
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Add formatCurrency function
+  
   const formatCurrency = (amount) => {
     return `₱${parseFloat(amount || 0).toFixed(2)}`;
   };
 
-  // Add formatDate function
+  
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -38,7 +38,7 @@ const OrderCatalog = () => {
     });
   };
 
-  // Add formatStatus function
+
   const formatStatus = (status) => {
     return status ? status.replace('-', ' ') : 'Unknown';
   };
@@ -178,7 +178,7 @@ const OrderCatalog = () => {
       }
     }
 
-    // Prepare order data with all fields
+ 
     const orderData = {
       customer_name: customerName,
       staff_name: staffName,
@@ -213,7 +213,7 @@ const OrderCatalog = () => {
       console.log("📋 Order creation response:", result);
       
       if (result.success) {
-        // Store the created order for the receipt
+    
         const createdOrder = {
           ...orderData,
           id: result.data.id,
@@ -223,17 +223,17 @@ const OrderCatalog = () => {
         
         setLastOrder(createdOrder);
         
-        // Clear cart and show receipt
+
         setCart([]);
         
-        // Show receipt modal instead of alert
+  
         setShowReceipt(true);
         
         if (window.refreshOrders) {
           window.refreshOrders();
         }
         
-        // Don't go back to cart automatically - let user close the receipt first
+       
       } else {
         alert(`Failed to create order: ${result.message}`);
       }
@@ -243,7 +243,7 @@ const OrderCatalog = () => {
     }
   };
 
-  // Add function to close receipt and go back to cart
+  
   const handleCloseReceipt = () => {
     setShowReceipt(false);
     setLastOrder(null);
@@ -257,7 +257,7 @@ const OrderCatalog = () => {
 
   return (
     <div className="p-4">
-      {/* Header Section */}
+      {}
       <div className="mb-8">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -269,7 +269,7 @@ const OrderCatalog = () => {
               </p>
             </div>
             
-            {/* Search Bar Component */}
+            {}
             <div className="flex items-center gap-4">
               <SearchBar 
                 products={products} 
@@ -285,7 +285,7 @@ const OrderCatalog = () => {
           </div>
         </div>
 
-        {/* Search Status Display */}
+        {}
         {searchTerm && (
           <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -306,9 +306,9 @@ const OrderCatalog = () => {
         )}
       </div>
 
-      {/* Products and Cart/Checkout Sections */}
+      {}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Products Section */}
+        {}
         <section className="flex-1">
           {loading ? (
             <div className="text-center p-12">
@@ -359,7 +359,7 @@ const OrderCatalog = () => {
                   <div className="p-6">
                     <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
                       <div>
-                        {/* Removed stock badge, only showing category */}
+                        {}
                         <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
                           product.category === 'Bouquets' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
                           product.category === 'Plants' ? 'bg-green-100 text-green-800 border border-green-200' :
@@ -392,7 +392,7 @@ const OrderCatalog = () => {
                         </div>
                       </div>
                       
-                      {/* Removed stock check from button disable condition */}
+                      {}
                       <button
                         onClick={() => addToCart(product)}
                         className="flex items-center px-4 py-2 rounded-lg font-medium transition border bg-pink-600 hover:bg-pink-700 text-white border-pink-700"
@@ -410,12 +410,12 @@ const OrderCatalog = () => {
           )}
         </section>
 
-        {/* Right Panel - Cart/Checkout */}
+        {}
         <section className="lg:w-96 bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-6 border border-[#d4789e26]">
           {currentView === "cart" ? (
-            /* CART VIEW */
+            
             <>
-              {/* Header */}
+              {}
               <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
                   <h2 className="text-2xl font-bold text-pink-800/80">Current Order</h2>
@@ -438,12 +438,12 @@ const OrderCatalog = () => {
                 </div>
               ) : (
                 <>
-                  {/* Cart Items List */}
+                  {}
                   <div className="mb-8 max-h-96 overflow-y-auto pr-2">
                     <div className="space-y-4">
                       {cart.map((item) => (
                         <div key={item.id} className="flex items-start p-4 bg-pink-50 border border-pink-200 rounded-xl hover:bg-pink-100 transition-colors duration-200">
-                          {/* Item Info */}
+                          {}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
                               <div>
@@ -456,7 +456,7 @@ const OrderCatalog = () => {
                                   <span className="text-xs text-pink-800/60">₱{parseFloat(item.unit_price).toFixed(2)} each</span>
                                 </div>
                               </div>
-                              {/* DELETE BUTTON */}
+                              {}
                               <button
                                 onClick={() => removeFromCart(item.id)}
                                 className="ml-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium transition-colors flex items-center gap-1 border border-red-200"
@@ -469,7 +469,7 @@ const OrderCatalog = () => {
                               </button>
                             </div>
                             
-                            {/* Quantity Controls and Price - Removed stock limit */}
+                            {}
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center space-x-2">
                                 <div className="flex items-center border border-pink-300 rounded-lg overflow-hidden bg-white">
@@ -509,9 +509,9 @@ const OrderCatalog = () => {
                     </div>
                   </div>
 
-                  {/* Order Summary */}
+                  {}
                   <div className="space-y-4">
-                    {/* Order Details */}
+                    {}
                     <div className="bg-pink-50 rounded-xl p-4 space-y-3 border border-pink-200">
                       <div className="flex justify-between items-center">
                         <span className="text-pink-800/70">Subtotal</span>
@@ -536,7 +536,7 @@ const OrderCatalog = () => {
                       </div>
                     </div>
 
-                    {/* Checkout Button */}
+                    {}
                     <button
                       onClick={handleOpenCheckout}
                       className="w-full bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 border border-pink-700"
@@ -553,9 +553,9 @@ const OrderCatalog = () => {
               )}
             </>
           ) : (
-            /* CHECKOUT VIEW */
+            
             <>
-              {/* Header */}
+              {}
               <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
                   <h2 className="text-2xl font-bold text-pink-800/80">Complete Payment</h2>
@@ -569,13 +569,13 @@ const OrderCatalog = () => {
                 </button>
               </div>
 
-              {/* Total Amount */}
+              {}
               <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <div className="text-sm text-pink-800/70 mb-1">Total Amount</div>
                 <div className="text-3xl font-bold text-pink-800/80">₱{calculateGrandTotal().toFixed(2)}</div>
               </div>
 
-              {/* Customer Name */}
+              {}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Customer Name
@@ -589,7 +589,7 @@ const OrderCatalog = () => {
                 />
               </div>
 
-              {/* Staff Name */}
+              {}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Staff Name
@@ -603,7 +603,7 @@ const OrderCatalog = () => {
                 />
               </div>
 
-              {/* Payment Method */}
+              {}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Select Payment Method
@@ -632,7 +632,7 @@ const OrderCatalog = () => {
                 </div>
               </div>
 
-              {/* Cash Received (only shown for cash payment) */}
+              {}
               {paymentMethod === "cash" && (
                 <>
                   <div className="mb-4">
@@ -653,7 +653,7 @@ const OrderCatalog = () => {
                     </div>
                   </div>
 
-                  {/* Change */}
+                  {}
                   {change > 0 && (
                     <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
                       <div className="text-sm text-green-600 mb-1">Change</div>
@@ -663,7 +663,7 @@ const OrderCatalog = () => {
                 </>
               )}
 
-              {/* Order Summary */}
+              {}
               <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <div className="text-sm font-medium text-pink-800/70 mb-3">Order Summary</div>
                 <div className="space-y-2 text-sm">
@@ -682,7 +682,7 @@ const OrderCatalog = () => {
                 </div>
               </div>
 
-              {/* Complete Payment Button */}
+              {}
               <button
                 onClick={handleProcessPayment}
                 disabled={paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < calculateGrandTotal())}
@@ -704,7 +704,7 @@ const OrderCatalog = () => {
         </section>
       </div>
 
-      {/* Order Receipt Modal */}
+      {}
       {showReceipt && lastOrder && (
         <OrderModal
           order={lastOrder}

@@ -204,13 +204,13 @@ const fetchDailySales = async () => {
 
   return (
     <>
-      {/* Export Button at the top */}
+      {}
       <div className="flex justify-end mb-6">
         <ExportButton activePeriod="daily" salesData={salesData} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* TODAY'S REVENUE */}
+        {}
         <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h6 className="text-pink-800/80 text-lg font-semibold">Today's Revenue</h6>
@@ -231,7 +231,7 @@ const fetchDailySales = async () => {
           </div>
         </div>
 
-        {/* TODAY'S ORDERS */}
+        {}
         <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h6 className="text-pink-800/80 text-lg font-semibold">Today's Orders</h6>
@@ -247,7 +247,7 @@ const fetchDailySales = async () => {
           </div>
         </div>
 
-        {/* ITEMS SOLD TODAY */}
+        {}
         <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h6 className="text-pink-800/80 text-lg font-semibold">Items Sold</h6>
@@ -263,7 +263,7 @@ const fetchDailySales = async () => {
           </div>
         </div>
 
-        {/* AVG ORDER VALUE TODAY */}
+        {}
         <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h6 className="text-pink-800/80 text-lg font-semibold">Average Order</h6>
@@ -282,7 +282,7 @@ const fetchDailySales = async () => {
         </div>
       </div>
 
-      {/* Today's Top Products */}
+      {}
       {topProducts.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
           <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Today's Top Products</h3>
@@ -309,7 +309,7 @@ const fetchDailySales = async () => {
         </div>
       )}
 
-      {/* TODAY'S SALES TABLE */}
+      {}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">
         
         <SalesTable data={salesData} filterType="daily" />

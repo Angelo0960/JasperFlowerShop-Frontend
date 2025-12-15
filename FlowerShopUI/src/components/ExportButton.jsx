@@ -5,7 +5,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
   const [exportFormat, setExportFormat] = useState('csv');
   const [localSelectedMonth, setLocalSelectedMonth] = useState(selectedMonth || new Date().getMonth() + 1);
 
-  // Generate month options
+  
   const months = [
     { value: 1, label: 'January' },
     { value: 2, label: 'February' },
@@ -21,7 +21,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
     { value: 12, label: 'December' }
   ];
 
-  // Sync with parent component if props change
+  
   useEffect(() => {
     if (selectedMonth !== undefined) {
       setLocalSelectedMonth(selectedMonth);
@@ -43,15 +43,15 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
     }
 
     try {
-      // Get headers from the data structure
+      
       let headers = [];
       if (salesData.length > 0) {
-        // Try to get headers from first object
+        
         headers = Object.keys(salesData[0]);
         
-        // If the data is nested, try to flatten it
+        
         if (headers.length === 0 && typeof salesData[0] === 'object') {
-          // Try common sales data keys
+          
           headers = [
             'sale_code', 'sale_date', 'sale_time', 'customer_name', 
             'staff_name', 'items_count', 'total_amount', 'payment_method', 
@@ -64,11 +64,11 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
         headers = ['Date', 'Customer', 'Items', 'Amount', 'Payment Method'];
       }
 
-      // Create CSV content
+      
       const csvRows = [
-        // Headers
+        
         headers.join(','),
-        // Data rows
+        
         ...salesData.map(row => {
           return headers.map(header => {
             let value = '';
@@ -89,10 +89,10 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
               value = row.payment_method;
             }
             
-            // Handle values that might contain commas or quotes
+            
             if (value === null || value === undefined) return '';
             const stringValue = String(value);
-            // Escape quotes and wrap in quotes if contains comma or quote
+            
             if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
               return `"${stringValue.replace(/"/g, '""')}"`;
             }
@@ -147,7 +147,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
       <div className="flex items-center gap-4">
-        {/* Format Selector */}
+        {}
         <div className="flex flex-col">
           <select
             value={exportFormat}
@@ -160,7 +160,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
           <div className="text-xs text-pink-600/70 mt-1 text-center">Format</div>
         </div>
 
-        {/* Month Selector */}
+        {}
         <div className="flex flex-col">
           <select
             value={localSelectedMonth}
@@ -178,7 +178,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
         </div>
       </div>
 
-      {/* Export Button - Pink Themed */}
+      {}
       <div>
         <button
           onClick={handleExport}

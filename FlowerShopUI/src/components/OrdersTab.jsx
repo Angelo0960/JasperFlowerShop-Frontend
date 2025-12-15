@@ -30,7 +30,7 @@ export default function OrdersTab() {
 
   return (
     <div className="">
-      {/* Sub-tabs */}
+
       <div className="flex space-x-1 rounded-xl pb-2 mb-6">
         {tabs.map((tabItem) => (
           <button
@@ -50,7 +50,6 @@ export default function OrdersTab() {
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="bg-white rounded-xl border border-[#d4789e26] shadow-sm">
         {tab === "transaction" && <OrderTransaction />}
         {tab === "fulfillment" && <OrderFulfillment />}

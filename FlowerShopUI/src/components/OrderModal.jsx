@@ -3,27 +3,27 @@ import React from "react";
 const OrderModal = ({ order, onClose, formatCurrency, formatDate, formatStatus }) => {
   if (!order) return null;
 
-  // Helper function to safely parse prices
+  
   const safeParsePrice = (price) => {
     if (price === undefined || price === null) return 0;
     const parsed = parseFloat(price);
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  // Helper function to safely parse quantity
+  
   const safeParseQuantity = (qty) => {
     if (qty === undefined || qty === null) return 1;
     const parsed = parseInt(qty);
     return isNaN(parsed) ? 1 : parsed;
   };
 
-  // Calculate tax and total
-  const taxRate = 0.08; // 8%
+  
+  const taxRate = 0.08; 
   const subtotal = safeParsePrice(order.total_amount);
   const taxAmount = subtotal * taxRate;
   const grandTotal = subtotal + taxAmount;
 
-  // Get items array
+  
   const items = Array.isArray(order.items) ? order.items : [];
 
   return (

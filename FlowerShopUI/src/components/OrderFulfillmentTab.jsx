@@ -10,7 +10,7 @@ const STATUS_TABS = [
 
 export default function OrderFulfillmentTab() {
   const [activeStatus, setActiveStatus] = useState("pending");
-  const [allOrders, setAllOrders] = useState([]); // Store ALL orders
+  const [allOrders, setAllOrders] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
@@ -21,7 +21,7 @@ export default function OrderFulfillmentTab() {
     cancelled: 0
   });
 
-  // Check if a date is today
+ 
   const isToday = (dateString) => {
     if (!dateString) return false;
     
@@ -35,21 +35,21 @@ export default function OrderFulfillmentTab() {
     );
   };
 
-  // Get today's completed orders
+  
   const getTodayCompletedOrders = useCallback((orders) => {
     if (!Array.isArray(orders)) return [];
     
     return orders.filter(order => {
-      // Check if order is completed AND was completed today
+      
       if (order.status !== "completed") return false;
       
-      // Check completed_at date if available, otherwise use created_at or updated_at
+      
       const dateToCheck = order.completed_at || order.updated_at || order.created_at;
       return isToday(dateToCheck);
     });
   }, []);
 
-  // Fetch order statistics
+  
   const fetchOrderStats = useCallback(async () => {
     try {
       console.log("📊 Fetching order stats...");
@@ -70,7 +70,7 @@ export default function OrderFulfillmentTab() {
     }
   }, []);
 
-  // Load orders for the current tab
+  
   const loadOrders = useCallback(async () => {
     try {
       console.log("🔄 Loading orders with status:", activeStatus);
@@ -79,8 +79,8 @@ export default function OrderFulfillmentTab() {
       
       let url = "http://localhost:3000/orders/list";
       
-      // For all tabs, we'll fetch all orders but the table will filter them appropriately
-      // This ensures we have data for all tabs
+      
+      
       console.log("🌐 Fetching from:", url);
       
       const response = await fetch(url);
@@ -95,7 +95,7 @@ export default function OrderFulfillmentTab() {
       console.log("📦 Orders received:", result.data?.length || 0, "orders");
       
       if (result.success) {
-        // Store ALL orders
+        
         setAllOrders(result.data || []);
         console.log("✅ Orders loaded successfully");
       } else {
@@ -110,75 +110,75 @@ export default function OrderFulfillmentTab() {
     }
   }, [activeStatus]);
 
-  // Function to immediately update stats when order status changes
+  
   const updateStatsImmediately = useCallback((oldStatus, newStatus) => {
     console.log(`📊 Updating stats: ${oldStatus} -> ${newStatus}`);
     
     setStats(prevStats => {
       const newStats = { ...prevStats };
       
-      // Decrease count from old status
+      
       if (oldStatus === "pending") newStats.pending = Math.max(0, newStats.pending - 1);
       if (oldStatus === "in-progress") newStats.inProgress = Math.max(0, newStats.inProgress - 1);
       if (oldStatus === "completed") newStats.completed = Math.max(0, newStats.completed - 1);
       if (oldStatus === "cancelled") newStats.cancelled = Math.max(0, newStats.cancelled - 1);
       
-      // Increase count to new status
+      
       if (newStatus === "pending") newStats.pending += 1;
       if (newStatus === "in-progress") newStats.inProgress += 1;
       if (newStatus === "completed") newStats.completed += 1;
       if (newStatus === "cancelled") newStats.cancelled += 1;
       
-      // Total remains the same (just moving between statuses)
+      
       console.log("📊 Updated stats immediately:", newStats);
       return newStats;
     });
   }, []);
 
-  // Function to handle order status update from OrderTable
+  
   const handleOrderStatusUpdate = useCallback((orderId, oldStatus, newStatus) => {
     console.log(`🔄 Order ${orderId} status changed: ${oldStatus} -> ${newStatus}`);
     
-    // 1. Immediately update the stats counts
+    
     updateStatsImmediately(oldStatus, newStatus);
     
-    // 2. Update the local orders state
+    
     setAllOrders(prevOrders => {
       return prevOrders.map(order => 
         order.id === orderId 
           ? { 
               ...order, 
               status: newStatus,
-              // If order was just completed, add completed_at timestamp
+              
               ...(newStatus === "completed" && !order.completed_at ? {
                 completed_at: new Date().toISOString(),
-                updated_at: new Date().toISOString() // Also update updated_at
+                updated_at: new Date().toISOString() 
               } : newStatus !== "completed" ? {} : order)
             }
           : order
       );
     });
     
-    // 3. Refresh server stats to ensure accuracy (delayed to avoid race condition)
+    
     setTimeout(() => {
       fetchOrderStats();
     }, 500);
     
   }, [updateStatsImmediately, fetchOrderStats]);
 
-  // Load orders on component mount and when status tab changes
+  
   useEffect(() => {
     console.log("🎯 Loading orders for status:", activeStatus);
     loadOrders();
   }, [loadOrders]);
 
-  // Load stats on component mount
+  
   useEffect(() => {
     console.log("📊 Loading order stats");
     fetchOrderStats();
   }, [fetchOrderStats]);
 
-  // Get count for a specific tab from server stats
+  
   const getTabCount = useCallback((tabId) => {
     switch(tabId) {
       case "pending":
@@ -186,7 +186,7 @@ export default function OrderFulfillmentTab() {
       case "in-progress":
         return stats.inProgress;
       case "completed":
-        // Show total completed orders from server stats in the tab count
+        
         return stats.completed;
       case "cancelled":
         return stats.cancelled;
@@ -195,32 +195,32 @@ export default function OrderFulfillmentTab() {
     }
   }, [stats]);
 
-  // Get count of today's completed orders for the stats card
+  
   const getTodayCompletedCount = useMemo(() => {
     return getTodayCompletedOrders(allOrders).length;
   }, [allOrders, getTodayCompletedOrders]);
 
-  // Memoized filtered orders for better performance
+  
   const filteredOrders = useMemo(() => {
     console.log("🔍 Filtering orders by status:", activeStatus);
     
     if (activeStatus === "completed") {
-      // For completed status, filter to show only today's completed orders
+      
       return getTodayCompletedOrders(allOrders);
     } else {
-      // For other statuses, filter by status
+      
       return allOrders.filter(order => order.status === activeStatus);
     }
   }, [allOrders, activeStatus, getTodayCompletedOrders]);
 
-  // Manual refresh function
+  
   const handleManualRefresh = useCallback(() => {
     console.log("🔄 Manual refresh triggered");
     loadOrders();
     fetchOrderStats();
   }, [loadOrders, fetchOrderStats]);
 
-  // Format date for display
+  
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { 
       weekday: 'long',

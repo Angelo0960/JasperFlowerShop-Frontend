@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import SalesTable from "./SalesTable.jsx";
-import ExportButton from "./ExportButton.jsx";  // Add this import
+import ExportButton from "./ExportButton.jsx";  
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const WeeklySales = () => {
@@ -24,10 +24,10 @@ const WeeklySales = () => {
       
       console.log("📊 Fetching weekly sales...");
       
-      // Try both endpoints
+      
 const endpoints = [
-  "http://localhost:3000/api/reports/sales?period=weekly",  // Correct endpoint
-  "http://localhost:3000/sales/reports/weekly"  // Fallback for backward compatibility
+  "http://localhost:3000/api/reports/sales?period=weekly",  
+  "http://localhost:3000/sales/reports/weekly"  
 ];
       
       let response;
@@ -58,7 +58,7 @@ const endpoints = [
       console.log("📦 API Response:", result);
       
       if (result.success) {
-        // Extract data from the response structure
+        
         let rawData = [];
         let summary = {};
         let dailyBreakdown = [];
@@ -71,30 +71,30 @@ const endpoints = [
         
         console.log(`📊 Processed ${rawData.length} sales records`);
         
-        // Ensure arrays
+        
         if (!Array.isArray(rawData)) rawData = [];
         if (!Array.isArray(dailyBreakdown)) dailyBreakdown = [];
         
         setSalesData(rawData);
         setChartData(dailyBreakdown);
         
-        // Calculate stats - ensure they're numbers
+        
         const totalRev = parseFloat(summary.total_sales || summary.totalSales || 0);
         const totalOrd = parseInt(summary.transaction_count || rawData.length || 0, 10);
         const totalItems = parseInt(summary.total_items || 0, 10);
         
-        // Calculate average
+        
         let avg = 0;
         if (totalOrd > 0) {
           avg = totalRev / totalOrd;
         }
         
-        // Use average_transaction from summary if available
+        
         if (summary.average_transaction !== undefined && summary.average_transaction !== null) {
           avg = parseFloat(summary.average_transaction);
         }
         
-        // Set state with validated numbers
+        
         setTotalRevenue(isNaN(totalRev) ? 0 : totalRev);
         setTotalOrders(isNaN(totalOrd) ? 0 : totalOrd);
         setItemsSold(isNaN(totalItems) ? 0 : totalItems);
@@ -106,7 +106,7 @@ const endpoints = [
     } catch (error) {
       console.error('❌ Error fetching weekly sales:', error);
       setError(error.message);
-      // Set default values on error
+      
       setTotalRevenue(0);
       setTotalOrders(0);
       setItemsSold(0);
@@ -151,7 +151,7 @@ const endpoints = [
     );
   }
 
-  // Ensure averageOrderValue is a number before using toFixed
+  
   const safeAverage = typeof averageOrderValue === 'number' && !isNaN(averageOrderValue) 
     ? averageOrderValue 
     : 0;
@@ -262,7 +262,7 @@ const endpoints = [
                 />
                 <Bar 
                   dataKey="totalSales" 
-                  fill="#db2777"  // Changed to pink color
+                  fill="#db2777"  
                   name="Daily Revenue" 
                   radius={[4, 4, 0, 0]}
                 />

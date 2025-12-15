@@ -17,7 +17,7 @@ export default function SalesTab() {
     
       
 
-      {/* Sub-tabs */}
+      
       <div className="flex space-x-1 border-b border-pink-800/20 pb-2 mb-6">
         {tabs.map((tab) => (
           <button
@@ -36,7 +36,7 @@ export default function SalesTab() {
         ))}
       </div>
 
-      {/* Component loader - NO ExportButton here anymore */}
+      
       <div className="p-4">
         {tabs.map((tab) => (
           <div key={tab.id} className={salesPeriod === tab.id ? "block" : "hidden"}>
