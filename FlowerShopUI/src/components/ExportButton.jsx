@@ -1,40 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMonth }) => {
+const ExportButton = ({ salesData = [] }) => {
   const [exporting, setExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState('csv');
-  const [localSelectedMonth, setLocalSelectedMonth] = useState(selectedMonth || new Date().getMonth() + 1);
+  const [exportFormat, setExportFormat] = useState('csv'); // Keeping format selector logic
 
-  
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' }
-  ];
+  // Removed: activePeriod, onMonthChange, selectedMonth props
+  // Removed: localSelectedMonth state and related useEffect/handleMonthChange
 
-  
-  useEffect(() => {
-    if (selectedMonth !== undefined) {
-      setLocalSelectedMonth(selectedMonth);
-    }
-  }, [selectedMonth]);
+  // Removed: Generate month options (months array)
 
-  const handleMonthChange = (e) => {
-    const month = parseInt(e.target.value);
-    setLocalSelectedMonth(month);
-    if (onMonthChange) {
-      onMonthChange(month);
-    }
-  };
+  // Removed: handleMonthChange function
 
   const exportToCSV = () => {
     if (!salesData || salesData.length === 0) {
@@ -43,36 +18,36 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
     }
 
     try {
-      
+      // Get headers from the data structure
       let headers = [];
       if (salesData.length > 0) {
-        
+        // Try to get headers from first object
         headers = Object.keys(salesData[0]);
-        
-        
+
+        // If the data is nested, try to flatten it
         if (headers.length === 0 && typeof salesData[0] === 'object') {
-          
+          // Try common sales data keys
           headers = [
-            'sale_code', 'sale_date', 'sale_time', 'customer_name', 
-            'staff_name', 'items_count', 'total_amount', 'payment_method', 
+            'sale_code', 'sale_date', 'sale_time', 'customer_name',
+            'staff_name', 'items_count', 'total_amount', 'payment_method',
             'order_id', 'status'
           ];
         }
       }
-      
+
       if (headers.length === 0) {
         headers = ['Date', 'Customer', 'Items', 'Amount', 'Payment Method'];
       }
 
-      
+      // Create CSV content
       const csvRows = [
-        
+        // Headers
         headers.join(','),
-        
+        // Data rows
         ...salesData.map(row => {
           return headers.map(header => {
             let value = '';
-            
+
             if (row[header] !== undefined) {
               value = row[header];
             } else if (row[header.toLowerCase()] !== undefined) {
@@ -88,11 +63,11 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
             } else if (header === 'Payment Method' && row.payment_method) {
               value = row.payment_method;
             }
-            
-            
+
+            // Handle values that might contain commas or quotes
             if (value === null || value === undefined) return '';
             const stringValue = String(value);
-            
+            // Escape quotes and wrap in quotes if contains comma or quote
             if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
               return `"${stringValue.replace(/"/g, '""')}"`;
             }
@@ -100,20 +75,21 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
           }).join(',')
         })
       ];
-      
+
       const csvContent = csvRows.join('\n');
-      const monthName = getMonthName(localSelectedMonth);
+      // Updated filename to remove month part
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${monthName}_sales_${new Date().toISOString().split('T')[0]}.csv`;
+      // Filename now just uses 'sales'
+      a.download = `sales_data_${new Date().toISOString().split('T')[0]}.csv`; 
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      
+
     } catch (error) {
       console.error('Error exporting CSV:', error);
       alert('Failed to export data. Please try again.');
@@ -122,9 +98,9 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
 
   const handleExport = () => {
     if (exporting) return;
-    
+
     setExporting(true);
-    
+
     try {
       exportToCSV();
     } catch (error) {
@@ -140,14 +116,12 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
     return `Export Data (${exportFormat.toUpperCase()})`;
   };
 
-  const getMonthName = (monthNumber) => {
-    return months.find(m => m.value === monthNumber)?.label || 'Month';
-  };
+  // Removed: getMonthName function
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
       <div className="flex items-center gap-4">
-        {}
+        {/* Format Selector */}
         <div className="flex flex-col">
           <select
             value={exportFormat}
@@ -160,32 +134,17 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
           <div className="text-xs text-pink-600/70 mt-1 text-center">Format</div>
         </div>
 
-        {}
-        <div className="flex flex-col">
-          <select
-            value={localSelectedMonth}
-            onChange={handleMonthChange}
-            className="border border-pink-300 rounded-lg px-3 py-2 text-pink-800 bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm w-48"
-            disabled={exporting}
-          >
-            {months.map(month => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </select>
-          <div className="text-xs text-pink-600/70 mt-1 text-center">Month</div>
-        </div>
+        {/* Month Selector REMOVED from here */}
       </div>
 
-      {}
+      {/* Export Button - Pink Themed */}
       <div>
         <button
           onClick={handleExport}
           disabled={exporting || salesData.length === 0}
           className={`flex items-center bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 justify-center ${
-            exporting ? 'opacity-50 cursor-not-allowed' : 
-            salesData.length === 0 ? 'opacity-50 cursor-not-allowed hover:from-pink-600 hover:to-pink-700' : 
+            exporting ? 'opacity-50 cursor-not-allowed' :
+            salesData.length === 0 ? 'opacity-50 cursor-not-allowed hover:from-pink-600 hover:to-pink-700' :
             'hover:shadow-lg hover:scale-105'
           }`}
         >
@@ -207,7 +166,7 @@ const ExportButton = ({ activePeriod, salesData = [], onMonthChange, selectedMon
           )}
         </button>
         <div className="text-xs text-pink-600/70 mt-1 text-center">
-          Export {getMonthName(localSelectedMonth)} Sales
+          Export All Sales Data
         </div>
       </div>
     </div>

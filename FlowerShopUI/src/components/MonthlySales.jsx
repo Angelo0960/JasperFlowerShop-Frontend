@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import SalesTable from "./SalesTable.jsx";
-import ExportButton from "./ExportButton.jsx";  // Add this import
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ExportButton from "./ExportButton.jsx";
+
 
 const MonthlySales = () => {
   const [salesData, setSalesData] = useState([]);
@@ -17,6 +17,110 @@ const MonthlySales = () => {
   useEffect(() => {
     fetchMonthlySales();
   }, []);
+
+  // Function to extract top products from sales data - IMPROVED VERSION
+  const extractTopProductsFromSalesData = (sales) => {
+    console.log("🔍 Analyzing sales data for top products...");
+    console.log("📊 Sales data sample (first 3):", sales.slice(0, 3));
+    
+    const productMap = {};
+    let totalItemsProcessed = 0;
+    
+    // Process each sale to extract product information
+    sales.forEach((sale, saleIndex) => {
+      // Check multiple possible structures for product information
+      let productsFound = false;
+      
+      // Method 1: Check if sale has items array
+      if (sale.items && Array.isArray(sale.items)) {
+        console.log(`Sale ${saleIndex} has items array:`, sale.items);
+        sale.items.forEach(item => {
+          processProductItem(item);
+          totalItemsProcessed++;
+        });
+        productsFound = true;
+      }
+      
+      // Method 2: Check if sale has products array (alternative naming)
+      if (!productsFound && sale.products && Array.isArray(sale.products)) {
+        console.log(`Sale ${saleIndex} has products array:`, sale.products);
+        sale.products.forEach(item => {
+          processProductItem(item);
+          totalItemsProcessed++;
+        });
+        productsFound = true;
+      }
+      
+      // Method 3: Check if sale has line_items array (common in e-commerce)
+      if (!productsFound && sale.line_items && Array.isArray(sale.line_items)) {
+        console.log(`Sale ${saleIndex} has line_items array:`, sale.line_items);
+        sale.line_items.forEach(item => {
+          processProductItem(item);
+          totalItemsProcessed++;
+        });
+        productsFound = true;
+      }
+      
+      // Method 4: Check if sale has order_items array
+      if (!productsFound && sale.order_items && Array.isArray(sale.order_items)) {
+        console.log(`Sale ${saleIndex} has order_items array:`, sale.order_items);
+        sale.order_items.forEach(item => {
+          processProductItem(item);
+          totalItemsProcessed++;
+        });
+        productsFound = true;
+      }
+      
+      // Method 5: Check if sale has product details directly (for simple transactions)
+      if (!productsFound && (sale.product_name || sale.product_id)) {
+        console.log(`Sale ${saleIndex} has direct product info:`, sale);
+        processProductItem(sale);
+        totalItemsProcessed++;
+        productsFound = true;
+      }
+      
+      if (!productsFound) {
+        console.log(`Sale ${saleIndex} has no product info structure. Sale object:`, sale);
+      }
+    });
+    
+    // Helper function to process a product item
+    function processProductItem(item) {
+      const productId = item.product_id || item.id || item.productId || 'unknown_' + Math.random();
+      const productName = item.product_name || item.name || item.productName || 
+                         item.description || 'Unknown Product';
+      const quantity = parseInt(item.quantity || item.qty || item.amount || 1);
+      const price = parseFloat(item.unit_price || item.price || item.unitPrice || 
+                              item.total_price || item.totalPrice || 0);
+      
+      // Debug each item
+      console.log(`  Processing item: ${productName} (ID: ${productId}), Qty: ${quantity}, Price: ${price}`);
+      
+      if (!productMap[productId]) {
+        productMap[productId] = {
+          product_id: productId,
+          product_name: productName,
+          total_quantity: 0,
+          total_revenue: 0
+        };
+      }
+      
+      productMap[productId].total_quantity += quantity;
+      productMap[productId].total_revenue += (price * quantity);
+    }
+    
+    console.log(`📊 Total items processed: ${totalItemsProcessed}`);
+    console.log("📊 Product map:", productMap);
+    
+    // Convert to array and sort by revenue
+    const productsArray = Object.values(productMap);
+    const sortedProducts = productsArray.sort((a, b) => b.total_revenue - a.total_revenue);
+    
+    console.log("📊 Sorted top products:", sortedProducts);
+    
+    // Take top 6 products or all if less than 6
+    return sortedProducts.slice(0, 6);
+  };
 
   const fetchMonthlySales = async () => {
     try {
@@ -39,7 +143,6 @@ const MonthlySales = () => {
         let rawData = [];
         let summary = {};
         let dailyBreakdown = [];
-        let topProductsData = [];
         
         if (result.data) {
           console.log("📊 API data structure:", {
@@ -52,23 +155,25 @@ const MonthlySales = () => {
           rawData = result.data.rawData || [];
           summary = result.data.summary || {};
           dailyBreakdown = result.data.dailyBreakdown || [];
-          topProductsData = result.data.topProducts || [];
         }
         
-        console.log(`Monthly sales loaded: ${rawData.length} records`);
+        console.log(`✅ Monthly sales loaded: ${rawData.length} records`);
         
         // Ensure arrays
         if (!Array.isArray(rawData)) rawData = [];
         if (!Array.isArray(dailyBreakdown)) dailyBreakdown = [];
-        if (!Array.isArray(topProductsData)) topProductsData = [];
         
         setSalesData(rawData);
         setChartData(dailyBreakdown);
-        setTopProducts(topProductsData);
+        
+        // Extract top products from sales data
+        const extractedTopProducts = extractTopProductsFromSalesData(rawData);
+        console.log("📊 Extracted top products:", extractedTopProducts);
+        setTopProducts(extractedTopProducts);
         
         // DEBUG: Log the summary values
-        console.log("Summary data:", summary);
-        console.log("Summary types:", {
+        console.log("📊 Summary data:", summary);
+        console.log("📊 Summary types:", {
           total_sales: typeof summary.total_sales,
           transaction_count: typeof summary.transaction_count,
           total_items: typeof summary.total_items,
@@ -160,14 +265,6 @@ const MonthlySales = () => {
     );
   }
 
-  // Debug: Log the current state values
-  console.log("🔄 Render state:", {
-    averageOrderValue,
-    type: typeof averageOrderValue,
-    isNumber: typeof averageOrderValue === 'number',
-    value: averageOrderValue
-  });
-
   // Ensure averageOrderValue is a number before using toFixed
   const safeAverage = typeof averageOrderValue === 'number' && !isNaN(averageOrderValue) 
     ? averageOrderValue 
@@ -175,13 +272,13 @@ const MonthlySales = () => {
 
   return (
     <>
-      {}
+      {/* Export Button at the top */}
       <div className="flex justify-end mb-6">
         <ExportButton activePeriod="monthly" salesData={salesData} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {}
+        {/* TOTAL REVENUE */}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Total Revenue</h6>
@@ -202,7 +299,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {}
+        {/* TOTAL ORDERS */}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Total Orders</h6>
@@ -218,7 +315,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {}
+        {/* ITEMS SOLD */}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Items Sold</h6>
@@ -234,7 +331,7 @@ const MonthlySales = () => {
           </div>
         </div>
 
-        {}
+        {/* AVG ORDER VALUE - FIXED with safeAverage */}
         <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h6 className="text-pink-800/80 text-xl font-semibold">Average Order Value</h6>
@@ -253,84 +350,9 @@ const MonthlySales = () => {
         </div>
       </div>
 
-      {}
-      {chartData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
-          <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Monthly Sales Trend</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [`₱${Number(value).toFixed(2)}`, 'Revenue']}
-                  labelFormatter={(label) => `Date: ${label}`}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalSales" 
-                  stroke="#db2777"  // Changed to pink color
-                  strokeWidth={2}
-                  name="Daily Revenue"
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="transactions" 
-                  stroke="#3B82F6" 
-                  strokeWidth={2}
-                  name="Transactions"
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {}
-      {topProducts.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
-          <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Top Selling Products</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topProducts.map((product, index) => (
-              <div key={index} className="flex items-center p-4 bg-pink-50 rounded-lg border border-pink-200">
-                <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm mr-4 border border-pink-200">
-                  <span className="text-lg font-bold text-pink-800/80">#{index + 1}</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-pink-800/80">{product.product_name}</h4>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-pink-800/60">
-                      {product.total_quantity || 0} sold
-                    </span>
-                    <span className="font-medium text-green-600">
-                      ₱{Number(product.total_revenue || 0).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {}
+      
+      {/* SALES TABLE - SIMPLIFIED LIKE DAILY SALES */}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">
-        <div className="p-4 border-b border-pink-200">
-          <h3 className="text-lg font-semibold text-pink-800/80">Monthly Sales Details</h3>
-          <p className="text-sm text-pink-800/60">Detailed breakdown of all sales in the last 30 days</p>
-          <button 
-            onClick={retryFetch}
-            className="mt-2 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition-colors text-sm font-medium border border-pink-700"
-          >
-            ↻ Refresh
-          </button>
-        </div>
         <SalesTable data={salesData} filterType="monthly" />
       </div>
     </>

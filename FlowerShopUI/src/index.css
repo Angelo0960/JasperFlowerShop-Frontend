@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "rallomy";
+  src: url(./assets/fonts/Regint.ttf);
+}
+
+@theme{
+  --font-rallomy: 'rallomy';
+}
