@@ -13,7 +13,7 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
   const endIndex = startIndex + itemsPerPage;
   const currentItems = data.slice(startIndex, endIndex);
 
-  const updateStatus = async (id, currentStatus, newStatus, isAutoRefreshAction = false) => {
+  const updateStatus = async (id, currentStatus, newStatus) => {
     if (updatingId) return;
     
     try {
@@ -47,20 +47,19 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
 
       console.log("🔄 Updating UI...");
       
-      // Only trigger instant UI update for Start and Complete buttons
-      if (isAutoRefreshAction && onOrderStatusUpdate) {
-        console.log("⚡ Triggering instant auto-refresh for action:", currentStatus, "->", newStatus);
+      // Always trigger instant UI update for all status changes
+      if (onOrderStatusUpdate) {
+        console.log("⚡ Triggering instant UI update for:", currentStatus, "->", newStatus);
         onOrderStatusUpdate(id, currentStatus, newStatus);
-        
-        // Also refresh the current tab data after a short delay
-        setTimeout(() => {
-          if (refreshOrders) refreshOrders();
-        }, 300);
-      } else {
-        // For Cancel button, just refresh normally
-        console.log("↻ Regular refresh for cancel action");
-        if (refreshOrders) refreshOrders();
       }
+      
+      // Refresh the orders list after a short delay
+      setTimeout(() => {
+        if (refreshOrders) {
+          console.log("↻ Refreshing orders list");
+          refreshOrders();
+        }
+      }, 300);
       
     } catch (error) {
       console.error("❌ Error updating status:", error);
@@ -100,6 +99,31 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
       case 'cancelled': return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' };
       default: return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' };
     }
+  };
+
+  // Function to render items list
+  const renderItems = (items) => {
+    if (!items || items.length === 0) {
+      return <span className="text-pink-800/60 text-sm">No items</span>;
+    }
+    
+    const visibleItems = items.slice(0, 2);
+    const remainingCount = items.length - 2;
+    
+    return (
+      <div>
+        {visibleItems.map((item, index) => (
+          <div key={index} className="text-sm text-pink-800/80 truncate">
+            {item.quantity}x {item.name || 'Item'}
+          </div>
+        ))}
+        {remainingCount > 0 && (
+          <div className="text-xs text-pink-800/60">
+            +{remainingCount} more item{remainingCount > 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Pagination handlers
@@ -142,7 +166,7 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
       {/* Pagination Controls - Top */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-2 sm:space-y-0">
         <div className="text-sm text-pink-800/60">
-        
+          
         </div>
         
         <div className="flex items-center space-x-4 p-2 pt-4 pr-4">
@@ -289,20 +313,13 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
                       )}
                     </td>
                     
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700 text-sm font-medium mr-2 border border-pink-200">
-                          {order.items_count}
+                    <td className="px-6 py-4">
+                      <div className="flex items-start">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700 text-sm font-medium mr-3 mt-1 border border-pink-200 flex-shrink-0">
+                          {order.items_count || (Array.isArray(order.items) ? order.items.length : 0)}
                         </span>
-                        <div className="text-sm text-pink-800/70 truncate max-w-xs">
-                          {Array.isArray(order.items) 
-                            ? order.items.slice(0, 2).map(item => item.name).join(', ')
-                            : 'View Items'}
-                          {Array.isArray(order.items) && order.items.length > 2 && (
-                            <span className="text-pink-800/40 ml-1">
-                              +{order.items.length - 2} more
-                            </span>
-                          )}
+                        <div className="min-w-0 flex-1">
+                          {renderItems(Array.isArray(order.items) ? order.items : [])}
                         </div>
                       </div>
                     </td>
@@ -330,10 +347,10 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
                         View
                       </button>
                       
-                      {/* START Button (pending -> in-progress) - WITH AUTO REFRESH */}
+                      {/* START Button (pending -> in-progress) */}
                       {order.status === "pending" && (
                         <button
-                          onClick={() => updateStatus(order.id, order.status, "in-progress", true)}
+                          onClick={() => updateStatus(order.id, order.status, "in-progress")}
                           disabled={isUpdating || isLoading}
                           className="px-3 py-1 bg-pink-600 hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors border border-pink-700"
                         >
@@ -341,10 +358,10 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
                         </button>
                       )}
                       
-                      {/* COMPLETE Button (in-progress -> completed) - WITH AUTO REFRESH */}
+                      {/* COMPLETE Button (in-progress -> completed) */}
                       {order.status === "in-progress" && (
                         <button
-                          onClick={() => updateStatus(order.id, order.status, "completed", true)}
+                          onClick={() => updateStatus(order.id, order.status, "completed")}
                           disabled={isUpdating || isLoading}
                           className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors border border-green-700"
                         >
@@ -352,12 +369,12 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
                         </button>
                       )}
                       
-                      {/* Cancel Button (for pending and in-progress) - NO AUTO REFRESH */}
+                      {/* Cancel Button (for pending and in-progress) */}
                       {(order.status === "pending" || order.status === "in-progress") && (
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to cancel this order?')) {
-                              updateStatus(order.id, order.status, "cancelled", false);
+                              updateStatus(order.id, order.status, "cancelled");
                             }
                           }}
                           disabled={isUpdating || isLoading}
@@ -366,8 +383,6 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
                           Cancel
                         </button>
                       )}
-                      
-                 
                     </td>
                   </tr>
                 );
@@ -418,17 +433,18 @@ export default function OrderTable({ data, refreshOrders, isLoading, onOrderStat
               Next
             </button>
           </div>
-          {viewingOrder && (
-                <OrderDetailsModal
-                  order={viewingOrder}
-                  onClose={() => setViewingOrder(null)}
-                  formatCurrency={formatCurrency}
-                  formatDate={formatDate}
-                  formatStatus={formatStatus}
-                />
-              )}
         </div>
-        
+      )}
+      
+      {/* Order Details Modal */}
+      {viewingOrder && (
+        <OrderDetailsModal
+          order={viewingOrder}
+          onClose={() => setViewingOrder(null)}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          formatStatus={formatStatus}
+        />
       )}
     </div>
   );

@@ -289,7 +289,7 @@ const OrderCatalog = () => {
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-pink-800/80">Order Catalog</h2>
+              <h1 className="text-3xl font-bold text-pink-800/80">Order Catalog</h1>
               <p className="text-pink-800/60">
                 {filteredProducts.length} of {products.length} products shown
                 {searchTerm && ` • Searching: "${searchTerm}"`}
@@ -315,10 +315,10 @@ const OrderCatalog = () => {
         {/* Category Filter Tabs */}
         <div className="mb-4">
           <div className="flex flex-wrap gap-2 mb-3">
-            <span className="text-sm font-medium text-pink-800/70 mr-2">Filter by category:</span>
+            
             {getUniqueCategories().map(category => (
               <button
-                key={category}
+                
                 onClick={() => handleCategoryFilter(category)}
                 className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
                   selectedCategory === category
@@ -333,7 +333,7 @@ const OrderCatalog = () => {
           
           {selectedCategory !== "all" && (
             <div className="inline-flex items-center px-3 py-1.5 bg-pink-100 text-pink-700 rounded-lg text-sm border border-pink-200">
-              <span>Showing: ${selectedCategory}</span>
+              <span>{selectedCategory}</span>
               <button
                 onClick={() => handleCategoryFilter("all")}
                 className="ml-2 text-pink-600 hover:text-pink-800"
