@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SearchBar from "./SearchBar";
-import OrderModal from "./OrderModal"; // Add this import
+import OrderModal from "./OrderModal";
 
 const OrderCatalog = () => {
   const [products, setProducts] = useState([]);
@@ -12,22 +12,21 @@ const OrderCatalog = () => {
   const [currentView, setCurrentView] = useState("cart");
   const [customerName, setCustomerName] = useState("");
   const [staffName, setStaffName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("cash"); // Only cash option
   const [cashReceived, setCashReceived] = useState("");
   const [change, setChange] = useState(0);
-  const [showReceipt, setShowReceipt] = useState(false); 
-  const [lastOrder, setLastOrder] = useState(null); 
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [lastOrder, setLastOrder] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  
   const formatCurrency = (amount) => {
     return `₱${parseFloat(amount || 0).toFixed(2)}`;
   };
 
-  
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -37,7 +36,6 @@ const OrderCatalog = () => {
       day: 'numeric'
     });
   };
-
 
   const formatStatus = (status) => {
     return status ? status.replace('-', ' ') : 'Unknown';
@@ -84,8 +82,47 @@ const OrderCatalog = () => {
   };
 
   const handleSearchResults = (results, term) => {
-    setFilteredProducts(results);
+    let filtered = results;
+    
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(product => 
+        product.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+    
+    setFilteredProducts(filtered);
     setSearchTerm(term);
+  };
+
+  const handleCategoryFilter = (category) => {
+    setSelectedCategory(category);
+    
+    let filtered = products;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.product_code.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (category !== "all") {
+      filtered = filtered.filter(product => 
+        product.category?.toLowerCase() === category.toLowerCase()
+      );
+    }
+    
+    setFilteredProducts(filtered);
+  };
+
+  const getUniqueCategories = () => {
+    const categories = products
+      .map(product => product.category)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index);
+    
+    return ["all", ...categories];
   };
 
   const addToCart = (product) => {
@@ -144,19 +181,18 @@ const OrderCatalog = () => {
     setCurrentView("cart");
     setCustomerName("");
     setStaffName("");
-    setPaymentMethod("cash");
     setCashReceived("");
     setChange(0);
   };
 
   useEffect(() => {
-    if (paymentMethod === "cash" && cashReceived) {
+    if (cashReceived) {
       const grandTotal = calculateGrandTotal();
       const cash = parseFloat(cashReceived) || 0;
       const calculatedChange = cash - grandTotal;
       setChange(calculatedChange > 0 ? calculatedChange : 0);
     }
-  }, [cashReceived, paymentMethod]);
+  }, [cashReceived]);
 
   const handleProcessPayment = async () => {
     if (!customerName.trim()) {
@@ -169,20 +205,18 @@ const OrderCatalog = () => {
       return;
     }
 
-    if (paymentMethod === "cash") {
-      const cash = parseFloat(cashReceived) || 0;
-      const grandTotal = calculateGrandTotal();
-      if (cash < grandTotal) {
-        alert(`Cash received (₱${cash.toFixed(2)}) is less than total amount (₱${grandTotal.toFixed(2)})`);
-        return;
-      }
+    const cash = parseFloat(cashReceived) || 0;
+    const grandTotal = calculateGrandTotal();
+    if (cash < grandTotal) {
+      alert(`Cash received (₱${cash.toFixed(2)}) is less than total amount (₱${grandTotal.toFixed(2)})`);
+      return;
     }
 
- 
+    // Prepare order data with all fields
     const orderData = {
       customer_name: customerName,
       staff_name: staffName,
-      payment_method: paymentMethod,
+      payment_method: "cash", // Always cash
       items: cart.map(item => ({
         product_id: item.id,
         name: item.name,
@@ -192,8 +226,8 @@ const OrderCatalog = () => {
       total_amount: calculateTotal(),
       tax_amount: calculateTax(),
       grand_total: calculateGrandTotal(),
-      cash_received: paymentMethod === "cash" ? parseFloat(cashReceived) : 0,
-      change_amount: paymentMethod === "cash" ? change : 0,
+      cash_received: parseFloat(cashReceived),
+      change_amount: change,
       notes: 'Order from web interface',
       status: 'pending'
     };
@@ -213,7 +247,6 @@ const OrderCatalog = () => {
       console.log("📋 Order creation response:", result);
       
       if (result.success) {
-    
         const createdOrder = {
           ...orderData,
           id: result.data.id,
@@ -222,18 +255,12 @@ const OrderCatalog = () => {
         };
         
         setLastOrder(createdOrder);
-        
-
         setCart([]);
-        
-  
         setShowReceipt(true);
         
         if (window.refreshOrders) {
           window.refreshOrders();
         }
-        
-       
       } else {
         alert(`Failed to create order: ${result.message}`);
       }
@@ -243,7 +270,6 @@ const OrderCatalog = () => {
     }
   };
 
-  
   const handleCloseReceipt = () => {
     setShowReceipt(false);
     setLastOrder(null);
@@ -253,11 +279,12 @@ const OrderCatalog = () => {
   const clearSearch = () => {
     setFilteredProducts(products);
     setSearchTerm('');
+    setSelectedCategory("all");
   };
 
   return (
     <div className="p-4">
-      {}
+      {/* Header Section */}
       <div className="mb-8">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -266,10 +293,10 @@ const OrderCatalog = () => {
               <p className="text-pink-800/60">
                 {filteredProducts.length} of {products.length} products shown
                 {searchTerm && ` • Searching: "${searchTerm}"`}
+                {selectedCategory !== "all" && ` • Category: ${selectedCategory}`}
               </p>
             </div>
             
-            {}
             <div className="flex items-center gap-4">
               <SearchBar 
                 products={products} 
@@ -285,7 +312,42 @@ const OrderCatalog = () => {
           </div>
         </div>
 
-        {}
+        {/* Category Filter Tabs */}
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className="text-sm font-medium text-pink-800/70 mr-2">Filter by category:</span>
+            {getUniqueCategories().map(category => (
+              <button
+                key={category}
+                onClick={() => handleCategoryFilter(category)}
+                className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                  selectedCategory === category
+                    ? "bg-pink-600 text-white border-pink-700"
+                    : "bg-white text-pink-800/70 border-pink-300 hover:bg-pink-50 hover:border-pink-400"
+                }`}
+              >
+                {category === "all" ? "All Categories" : category}
+              </button>
+            ))}
+          </div>
+          
+          {selectedCategory !== "all" && (
+            <div className="inline-flex items-center px-3 py-1.5 bg-pink-100 text-pink-700 rounded-lg text-sm border border-pink-200">
+              <span>Showing: ${selectedCategory}</span>
+              <button
+                onClick={() => handleCategoryFilter("all")}
+                className="ml-2 text-pink-600 hover:text-pink-800"
+                title="Clear category filter"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Search Status Display */}
         {searchTerm && (
           <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -293,22 +355,23 @@ const OrderCatalog = () => {
                 <span className="font-medium text-pink-800">Search Results:</span>
                 <span className="ml-2 text-pink-700">
                   Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} for "{searchTerm}"
+                  {selectedCategory !== "all" && ` in ${selectedCategory}`}
                 </span>
               </div>
               <button
                 onClick={clearSearch}
                 className="text-sm text-pink-600 hover:text-pink-800 hover:underline"
               >
-                Clear Search
+                Clear All Filters
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {}
+      {/* Products and Cart/Checkout Sections */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {}
+        {/* Products Section */}
         <section className="flex-1">
           {loading ? (
             <div className="text-center p-12">
@@ -339,11 +402,13 @@ const OrderCatalog = () => {
               </h3>
               <p className="text-yellow-700">
                 {searchTerm 
-                  ? `No products match your search for "${searchTerm}"`
+                  ? `No products match your search for "${searchTerm}"${
+                    selectedCategory !== "all" ? ` in ${selectedCategory} category` : ""
+                  }`
                   : "The products list is empty or could not be loaded."
                 }
               </p>
-              {searchTerm && (
+              {(searchTerm || selectedCategory !== "all") && (
                 <button
                   onClick={clearSearch}
                   className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 border border-yellow-700"
@@ -359,7 +424,6 @@ const OrderCatalog = () => {
                   <div className="p-6">
                     <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
                       <div>
-                        {}
                         <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
                           product.category === 'Bouquets' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
                           product.category === 'Plants' ? 'bg-green-100 text-green-800 border border-green-200' :
@@ -392,7 +456,6 @@ const OrderCatalog = () => {
                         </div>
                       </div>
                       
-                      {}
                       <button
                         onClick={() => addToCart(product)}
                         className="flex items-center px-4 py-2 rounded-lg font-medium transition border bg-pink-600 hover:bg-pink-700 text-white border-pink-700"
@@ -410,12 +473,12 @@ const OrderCatalog = () => {
           )}
         </section>
 
-        {}
+        {/* Right Panel - Cart/Checkout */}
         <section className="lg:w-96 bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-6 border border-[#d4789e26]">
           {currentView === "cart" ? (
-            
+            /* CART VIEW */
             <>
-              {}
+              {/* Header */}
               <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
                   <h2 className="text-2xl font-bold text-pink-800/80">Current Order</h2>
@@ -438,12 +501,12 @@ const OrderCatalog = () => {
                 </div>
               ) : (
                 <>
-                  {}
+                  {/* Cart Items List */}
                   <div className="mb-8 max-h-96 overflow-y-auto pr-2">
                     <div className="space-y-4">
                       {cart.map((item) => (
                         <div key={item.id} className="flex items-start p-4 bg-pink-50 border border-pink-200 rounded-xl hover:bg-pink-100 transition-colors duration-200">
-                          {}
+                          {/* Item Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
                               <div>
@@ -456,7 +519,7 @@ const OrderCatalog = () => {
                                   <span className="text-xs text-pink-800/60">₱{parseFloat(item.unit_price).toFixed(2)} each</span>
                                 </div>
                               </div>
-                              {}
+                              {/* DELETE BUTTON */}
                               <button
                                 onClick={() => removeFromCart(item.id)}
                                 className="ml-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium transition-colors flex items-center gap-1 border border-red-200"
@@ -469,7 +532,7 @@ const OrderCatalog = () => {
                               </button>
                             </div>
                             
-                            {}
+                            {/* Quantity Controls and Price */}
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center space-x-2">
                                 <div className="flex items-center border border-pink-300 rounded-lg overflow-hidden bg-white">
@@ -509,9 +572,9 @@ const OrderCatalog = () => {
                     </div>
                   </div>
 
-                  {}
+                  {/* Order Summary */}
                   <div className="space-y-4">
-                    {}
+                    {/* Order Details */}
                     <div className="bg-pink-50 rounded-xl p-4 space-y-3 border border-pink-200">
                       <div className="flex justify-between items-center">
                         <span className="text-pink-800/70">Subtotal</span>
@@ -536,7 +599,7 @@ const OrderCatalog = () => {
                       </div>
                     </div>
 
-                    {}
+                    {/* Checkout Button */}
                     <button
                       onClick={handleOpenCheckout}
                       className="w-full bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 border border-pink-700"
@@ -553,9 +616,9 @@ const OrderCatalog = () => {
               )}
             </>
           ) : (
-            
+            /* CHECKOUT VIEW */
             <>
-              {}
+              {/* Header */}
               <div className="flex items-center justify-between mb-8 pb-4 border-b border-pink-200">
                 <div>
                   <h2 className="text-2xl font-bold text-pink-800/80">Complete Payment</h2>
@@ -569,13 +632,13 @@ const OrderCatalog = () => {
                 </button>
               </div>
 
-              {}
+              {/* Total Amount */}
               <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <div className="text-sm text-pink-800/70 mb-1">Total Amount</div>
                 <div className="text-3xl font-bold text-pink-800/80">₱{calculateGrandTotal().toFixed(2)}</div>
               </div>
 
-              {}
+              {/* Customer Name */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Customer Name
@@ -589,7 +652,7 @@ const OrderCatalog = () => {
                 />
               </div>
 
-              {}
+              {/* Staff Name */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-pink-800/70 mb-2">
                   Staff Name
@@ -603,67 +666,49 @@ const OrderCatalog = () => {
                 />
               </div>
 
-              {}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-pink-800/70 mb-2">
-                  Select Payment Method
-                </label>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setPaymentMethod("cash")}
-                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition ${
-                      paymentMethod === "cash"
-                        ? "border-pink-600 bg-pink-50 text-pink-700"
-                        : "border-pink-300 bg-white hover:border-pink-400"
-                    }`}
-                  >
-                    <div className="font-medium">Cash</div>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod("card")}
-                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition ${
-                      paymentMethod === "card"
-                        ? "border-pink-600 bg-pink-50 text-pink-700"
-                        : "border-pink-300 bg-white hover:border-pink-400"
-                    }`}
-                  >
-                    <div className="font-medium">Card</div>
-                  </button>
+              {/* Payment Method Display (Cash Only) */}
+              <div className="mb-6 p-4 bg-pink-50 border border-pink-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-pink-800/70 mb-1">Payment Method</div>
+                    <div className="text-lg font-semibold text-pink-800/80">Cash</div>
+                  </div>
+                  <div className="text-pink-600">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
-              {}
-              {paymentMethod === "cash" && (
-                <>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-pink-800/70 mb-2">
-                      Cash Received
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-pink-800/60">₱</span>
-                      <input
-                        type="number"
-                        value={cashReceived}
-                        onChange={(e) => setCashReceived(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full pl-10 pr-4 py-3 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
+              {/* Cash Received */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-pink-800/70 mb-2">
+                  Cash Received
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-pink-800/60">₱</span>
+                  <input
+                    type="number"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-10 pr-4 py-3 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition bg-white"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
 
-                  {}
-                  {change > 0 && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-                      <div className="text-sm text-green-600 mb-1">Change</div>
-                      <div className="text-2xl font-bold text-green-700">₱{change.toFixed(2)}</div>
-                    </div>
-                  )}
-                </>
+              {/* Change */}
+              {change > 0 && (
+                <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                  <div className="text-sm text-orange-700 mb-1">Change</div>
+                  <div className="text-2xl font-bold text-orange-800">₱{change.toFixed(2)}</div>
+                </div>
               )}
 
-              {}
+              {/* Order Summary */}
               <div className="mb-6 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <div className="text-sm font-medium text-pink-800/70 mb-3">Order Summary</div>
                 <div className="space-y-2 text-sm">
@@ -682,14 +727,14 @@ const OrderCatalog = () => {
                 </div>
               </div>
 
-              {}
+              {/* Complete Payment Button */}
               <button
                 onClick={handleProcessPayment}
-                disabled={paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < calculateGrandTotal())}
+                disabled={!cashReceived || parseFloat(cashReceived) < calculateGrandTotal()}
                 className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 border ${
-                  paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < calculateGrandTotal())
+                  !cashReceived || parseFloat(cashReceived) < calculateGrandTotal()
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400"
-                    : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-lg active:translate-y-0 border-green-700"
+                    : "bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white hover:shadow-lg active:translate-y-0 border-pink-700"
                 }`}
               >
                 <div className="flex items-center justify-center">
@@ -704,7 +749,7 @@ const OrderCatalog = () => {
         </section>
       </div>
 
-      {}
+      {/* Order Receipt Modal */}
       {showReceipt && lastOrder && (
         <OrderModal
           order={lastOrder}

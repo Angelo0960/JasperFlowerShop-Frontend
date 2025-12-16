@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import SalesTable from "./SalesTable.jsx";
-import ExportButton from "./ExportButton.jsx";  
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import ExportButton from "./ExportButton.jsx";  // Add this import
+
 
 const WeeklySales = () => {
   const [salesData, setSalesData] = useState([]);
@@ -24,10 +24,10 @@ const WeeklySales = () => {
       
       console.log("📊 Fetching weekly sales...");
       
-      
+      // Try both endpoints
 const endpoints = [
-  "http://localhost:3000/api/reports/sales?period=weekly",  
-  "http://localhost:3000/sales/reports/weekly"  
+  "http://localhost:3000/api/reports/sales?period=weekly",  // Correct endpoint
+  "http://localhost:3000/sales/reports/weekly"  // Fallback for backward compatibility
 ];
       
       let response;
@@ -58,7 +58,7 @@ const endpoints = [
       console.log("📦 API Response:", result);
       
       if (result.success) {
-        
+        // Extract data from the response structure
         let rawData = [];
         let summary = {};
         let dailyBreakdown = [];
@@ -71,30 +71,30 @@ const endpoints = [
         
         console.log(`📊 Processed ${rawData.length} sales records`);
         
-        
+        // Ensure arrays
         if (!Array.isArray(rawData)) rawData = [];
         if (!Array.isArray(dailyBreakdown)) dailyBreakdown = [];
         
         setSalesData(rawData);
         setChartData(dailyBreakdown);
         
-        
+        // Calculate stats - ensure they're numbers
         const totalRev = parseFloat(summary.total_sales || summary.totalSales || 0);
         const totalOrd = parseInt(summary.transaction_count || rawData.length || 0, 10);
         const totalItems = parseInt(summary.total_items || 0, 10);
         
-        
+        // Calculate average
         let avg = 0;
         if (totalOrd > 0) {
           avg = totalRev / totalOrd;
         }
         
-        
+        // Use average_transaction from summary if available
         if (summary.average_transaction !== undefined && summary.average_transaction !== null) {
           avg = parseFloat(summary.average_transaction);
         }
         
-        
+        // Set state with validated numbers
         setTotalRevenue(isNaN(totalRev) ? 0 : totalRev);
         setTotalOrders(isNaN(totalOrd) ? 0 : totalOrd);
         setItemsSold(isNaN(totalItems) ? 0 : totalItems);
@@ -106,7 +106,7 @@ const endpoints = [
     } catch (error) {
       console.error('❌ Error fetching weekly sales:', error);
       setError(error.message);
-      
+      // Set default values on error
       setTotalRevenue(0);
       setTotalOrders(0);
       setItemsSold(0);
@@ -151,7 +151,7 @@ const endpoints = [
     );
   }
 
-  
+  // Ensure averageOrderValue is a number before using toFixed
   const safeAverage = typeof averageOrderValue === 'number' && !isNaN(averageOrderValue) 
     ? averageOrderValue 
     : 0;
@@ -236,41 +236,7 @@ const endpoints = [
         </div>
       </div>
 
-      {/* Sales Chart */}
-      {chartData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-pink-800/80">Weekly Sales Trend</h3>
-            <span className="text-sm text-pink-800/60">
-              {chartData.length} days of data
-            </span>
-          </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  label={{ value: 'Date', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis 
-                  label={{ value: 'Revenue (₱)', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [`₱${Number(value).toFixed(2)}`, 'Revenue']}
-                  labelFormatter={(label) => `Date: ${label}`}
-                />
-                <Bar 
-                  dataKey="totalSales" 
-                  fill="#db2777"  
-                  name="Daily Revenue" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+      
 
       {/* SALES TABLE */}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">

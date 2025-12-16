@@ -36,7 +36,7 @@ const DailySales = () => {
     return () => clearInterval(intervalId);
   }, [currentDate]);
 
-const fetchDailySales = async () => {
+  const fetchDailySales = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -204,76 +204,77 @@ const fetchDailySales = async () => {
 
   return (
     <>
-      {}
+      {/* Export Button at the top */}
       <div className="flex justify-end mb-6">
         <ExportButton activePeriod="daily" salesData={salesData} />
       </div>
 
+      {/* UPDATED: Consistent card styling with WeeklySales and MonthlySales */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {}
-        <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h6 className="text-pink-800/80 text-lg font-semibold">Today's Revenue</h6>
+        {/* TODAY'S REVENUE */}
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Today's Revenue</h6>
             <div className="p-2 bg-pink-50 rounded-full border border-pink-200">
-              <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-pink-800/80 mb-2">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">
             ₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <div className="flex items-center text-sm text-pink-800/60">
             <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
             <span>Today's Total</span>
           </div>
         </div>
 
-        {}
-        <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h6 className="text-pink-800/80 text-lg font-semibold">Today's Orders</h6>
-            <div className="p-2 bg-pink-50 rounded-full border border-pink-200">
-              <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* TODAY'S ORDERS - Updated with blue icon to match WeeklySales */}
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Today's Orders</h6>
+            <div className="p-2 bg-blue-50 rounded-full border border-blue-200">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-pink-800/80 mb-2">{totalOrders}</p>
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">{totalOrders}</p>
           <div className="flex items-center text-sm text-pink-800/60">
             <span>Orders Today</span>
           </div>
         </div>
 
-        {}
-        <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h6 className="text-pink-800/80 text-lg font-semibold">Items Sold</h6>
-            <div className="p-2 bg-pink-50 rounded-full border border-pink-200">
-              <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* ITEMS SOLD TODAY - Updated with purple icon to match WeeklySales */}
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Items Sold</h6>
+            <div className="p-2 bg-purple-50 rounded-full border border-purple-200">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-pink-800/80 mb-2">{itemsSold}</p>
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">{itemsSold}</p>
           <div className="flex items-center text-sm text-pink-800/60">
             <span>Items Sold Today</span>
           </div>
         </div>
 
-        {}
-        <div className="relative flex flex-col bg-white shadow-sm border border-[#d4789e26] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h6 className="text-pink-800/80 text-lg font-semibold">Average Order</h6>
-            <div className="p-2 bg-pink-50 rounded-full border border-pink-200">
-              <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* AVG ORDER VALUE TODAY - Updated with orange icon to match WeeklySales */}
+        <div className="relative flex flex-col my-6 bg-white shadow-sm border border-[#d4789e26] rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h6 className="text-pink-800/80 text-xl font-semibold">Average Order</h6>
+            <div className="p-2 bg-orange-50 rounded-full border border-orange-200">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-pink-800/80 mb-2">
+          <p className="text-3xl font-bold text-pink-800/80 mb-2">
             ₱{safeAverage.toFixed(2)}
           </p>
           <div className="flex items-center text-sm text-pink-800/60">
@@ -282,7 +283,7 @@ const fetchDailySales = async () => {
         </div>
       </div>
 
-      {}
+      {/* Today's Top Products */}
       {topProducts.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-[#d4789e26]">
           <h3 className="text-lg font-semibold text-pink-800/80 mb-4">Today's Top Products</h3>
@@ -309,9 +310,8 @@ const fetchDailySales = async () => {
         </div>
       )}
 
-      {}
+      {/* TODAY'S SALES TABLE */}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-[#d4789e26]">
-        
         <SalesTable data={salesData} filterType="daily" />
       </div>
     </>
