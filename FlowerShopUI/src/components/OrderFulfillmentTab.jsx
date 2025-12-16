@@ -5,7 +5,7 @@ const STATUS_TABS = [
   { id: "pending", label: "Pending" },
   { id: "in-progress", label: "In-Progress" },
   { id: "completed", label: "Completed" },
-  { id: "cancelled", label: "Cancelled" }
+ 
 ];
 
 export default function OrderFulfillmentTab() {
@@ -18,7 +18,7 @@ export default function OrderFulfillmentTab() {
     pending: 0,
     inProgress: 0,
     completed: 0,
-    cancelled: 0
+   
   });
 
  
@@ -61,8 +61,8 @@ export default function OrderFulfillmentTab() {
           total: result.data.total_orders || 0,
           pending: result.data.pending_orders || 0,
           inProgress: result.data.in_progress_orders || 0,
-          completed: result.data.completed_orders || 0,
-          cancelled: result.data.cancelled_orders || 0
+          completed: result.data.completed_orders || 0
+          
         });
       }
     } catch (err) {
@@ -121,13 +121,12 @@ export default function OrderFulfillmentTab() {
       if (oldStatus === "pending") newStats.pending = Math.max(0, newStats.pending - 1);
       if (oldStatus === "in-progress") newStats.inProgress = Math.max(0, newStats.inProgress - 1);
       if (oldStatus === "completed") newStats.completed = Math.max(0, newStats.completed - 1);
-      if (oldStatus === "cancelled") newStats.cancelled = Math.max(0, newStats.cancelled - 1);
+     
       
       
       if (newStatus === "pending") newStats.pending += 1;
       if (newStatus === "in-progress") newStats.inProgress += 1;
       if (newStatus === "completed") newStats.completed += 1;
-      if (newStatus === "cancelled") newStats.cancelled += 1;
       
       
       console.log("📊 Updated stats immediately:", newStats);
@@ -188,8 +187,7 @@ export default function OrderFulfillmentTab() {
       case "completed":
         
         return stats.completed;
-      case "cancelled":
-        return stats.cancelled;
+      
       default:
         return 0;
     }
@@ -250,10 +248,7 @@ export default function OrderFulfillmentTab() {
           <div className="text-sm text-pink-800/70">Completed (Today)</div>
           <div className="text-2xl font-bold text-green-600">{getTodayCompletedCount}</div>
         </div>
-        <div className="bg-[#f8f3ed] border border-[#d4789e26] rounded-lg shadow-sm p-4">
-          <div className="text-sm text-pink-800/70">Cancelled</div>
-          <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
-        </div>
+        
       </div>
 
       {/* Status Tabs with Today's Date for Completed Tab */}
